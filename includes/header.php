@@ -11,6 +11,9 @@ $role     = $_SESSION['role'];
 $name     = $_SESSION['name'] ?? ($role === 'admin' ? 'Admin' : 'User');
 $isAdmin  = ($role === 'admin');
 
+// Ensure profile_pic column exists in users table
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_pic VARCHAR(255) NULL");
+
 // Fetch user profile picture for avatar display in header topbar
 $user_pic = '';
 if (isset($_SESSION['uid'])) {
