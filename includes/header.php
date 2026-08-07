@@ -249,7 +249,7 @@ function isActive($pageName) {
       <i class="bi bi-stopwatch" style="font-size:22px; color:var(--brand-primary);"></i>
       <div>
         <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);" id="shiftStatusTitle">Work Shift Tracker</div>
-        <div style="font-size:12px; color:var(--text-muted);" id="shiftStatusSub">Clock-in when you start work (Remote or Office).</div>
+        <div style="font-size:12px; color:var(--text-muted);" id="shiftStatusSub">Shift Hours: 9:00 AM to 5:00 PM (Punch-out requires Admin approval during shift).</div>
       </div>
     </div>
     <div style="display:flex; gap:8px;" id="shiftActionBtns">
@@ -276,16 +276,26 @@ function checkShiftStatus() {
       const btns = document.getElementById("shiftActionBtns");
 
       if (data.punchedIn) {
-        title.innerHTML = `<span style="color:#10b981;">🟢 Active Work Shift</span> (${data.mode} Mode)`;
-        sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. Your work hours are being recorded.`;
-        btns.innerHTML = `
-          <button class="btn danger-btn" onclick="punchShift('punch_out', '')" style="font-size:12.5px; padding:8px 16px;">
-            <i class="bi bi-stop-circle-fill"></i> 🔴 Punch Out / End Shift
-          </button>
-        `;
+        if (data.pendingApproval) {
+          title.innerHTML = `<span style="color:#ef4444;">⚠️ Early Punch-Out Approval Pending</span> (${data.mode} Mode)`;
+          sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. Early exit request sent to Admin.`;
+          btns.innerHTML = `
+            <span class="badge" style="background:#fee2e2; color:#991b1b; padding:8px 14px; font-size:12.5px;">
+              <i class="bi bi-clock-history"></i> Waiting for Admin Approval...
+            </span>
+          `;
+        } else {
+          title.innerHTML = `<span style="color:#10b981;">🟢 Active Work Shift</span> (${data.mode} Mode)`;
+          sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. (Note: 9:00 AM - 5:00 PM exit requires Admin Approval).`;
+          btns.innerHTML = `
+            <button class="btn danger-btn" onclick="handlePunchOut()" style="font-size:12.5px; padding:8px 16px;">
+              <i class="bi bi-stop-circle-fill"></i> 🔴 Punch Out / End Shift
+            </button>
+          `;
+        }
       } else {
         title.innerHTML = "Work Shift Tracker";
-        sub.innerHTML = "Clock-in when you start work (Remote or Office).";
+        sub.innerHTML = "Shift Hours: 9:00 AM to 5:00 PM (Auto 11:59 PM Midnight Punch-out enabled).";
         btns.innerHTML = `
           <button class="btn" onclick="punchShift('punch_in', 'remote')" style="background:#10b981; border:none; font-size:12.5px; padding:8px 14px;">
             <i class="bi bi-house-door-fill"></i> 🏠 Punch In (Remote Work)
@@ -298,10 +308,29 @@ function checkShiftStatus() {
     });
 }
 
-function punchShift(action, mode) {
+function handlePunchOut() {
+  const currentHour = new Date().getHours();
+  // Shift hours 9:00 AM to 5:00 PM (9 to 16)
+  if (currentHour >= 9 && currentHour < 17) {
+    const reason = prompt("⚠️ Official Shift Hours (9:00 AM to 5:00 PM).\nEmergency Punch-Out requires Admin approval.\n\nPlease enter your emergency reason for Admin review:");
+    if (reason === null) return;
+    if (reason.trim() === '') {
+      alert("Emergency reason is required to submit Punch-Out request to Admin!");
+      return;
+    }
+    punchShift('punch_out', '', reason.trim());
+  } else {
+    if (confirm("End your work shift now?")) {
+      punchShift('punch_out', '', '');
+    }
+  }
+}
+
+function punchShift(action, mode, reason = '') {
   const formData = new FormData();
   formData.append('action', action);
   formData.append('mode', mode);
+  if (reason) formData.append('reason', reason);
 
   fetch(basePath + "api_attendance.php", {
     method: 'POST',

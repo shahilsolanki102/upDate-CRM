@@ -3,8 +3,16 @@ require_once "../config.php";
 $requireLogin = 'admin';
 include __DIR__."/../includes/header.php";
 
+// Fetch pending early exit requests for Admin approval
+$pendingRequests = $conn->query("
+    SELECT a.*, u.name, u.email, u.phone
+    FROM attendance_logs a
+    JOIN users u ON a.user_id = u.id
+    WHERE a.status = 'pending_approval'
+    ORDER BY a.id DESC
+");
+
 // Fetch today's work shifts and active online status
-$today = date('Y-m-d');
 $shifts = $conn->query("
     SELECT a.*, u.name, u.email, u.department, u.role
     FROM attendance_logs a
@@ -18,6 +26,7 @@ $onlineRes = $conn->query("SELECT COUNT(DISTINCT user_id) c FROM attendance_logs
 $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
 ?>
 
+<!-- Metric Widgets -->
 <div class="grid">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <div>
@@ -32,21 +41,65 @@ $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
 
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-            <h3>Today's Shift Logins</h3>
-            <div class="metric" style="color:#2563eb;"><?php echo $shifts ? $shifts->num_rows : 0; ?> Shifts</div>
-            <div style="font-size:12px; color:#3b82f6; margin-top:4px; font-weight:600;">Remote & Office Shifts</div>
+            <h3>Pending Early Exit Requests</h3>
+            <div class="metric" style="color:#ef4444;"><?php echo $pendingRequests ? $pendingRequests->num_rows : 0; ?> Requests</div>
+            <div style="font-size:12px; color:#ef4444; margin-top:4px; font-weight:600;">⚠️ Needs Admin Approval</div>
         </div>
-        <div style="width:50px; height:50px; border-radius:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:24px;">
-            <i class="bi bi-calendar-check-fill"></i>
+        <div style="width:50px; height:50px; border-radius:14px; background:#fef2f2; border:1px solid #fecaca; color:#ef4444; display:flex; align-items:center; justify-content:center; font-size:24px;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
     </div>
 </div>
 
+<!-- Pending Early Punch-Out Requests Box (Admin Approval) -->
+<?php if ($pendingRequests && $pendingRequests->num_rows > 0): ?>
+<div class="card" style="margin-bottom:24px; border:2px solid #f87171; background:#fef2f2;">
+    <h3 style="color:#991b1b; display:flex; align-items:center; gap:8px;">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>⚠️ Emergency Early Punch-Out Approval Requests</span>
+    </h3>
+    <p style="color:#7f1d1d; font-size:13px; margin-bottom:16px;">Employees requested early exit between 9:00 AM and 5:00 PM. Review reasons and approve below.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Clock In Time</th>
+                <th>Emergency Reason</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php while($pr = $pendingRequests->fetch_assoc()): ?>
+            <tr>
+                <td style="font-weight:700; color:#111827;">
+                    <?php echo htmlspecialchars($pr['name']); ?>
+                    <div style="font-size:12px; font-weight:400; color:#6b7280;"><?php echo htmlspecialchars($pr['email']); ?></div>
+                </td>
+                <td style="font-weight:600; color:#374151;"><?php echo date('h:i A', strtotime($pr['clock_in'])); ?></td>
+                <td>
+                    <span style="background:#fee2e2; color:#991b1b; padding:6px 12px; border-radius:8px; font-size:13px; display:inline-block; font-weight:600;">
+                        <?php echo htmlspecialchars($pr['early_reason'] ?? 'Emergency Exit Request'); ?>
+                    </span>
+                </td>
+                <td>
+                    <button class="btn" onclick="approveEarlyExit(<?php echo $pr['id']; ?>)" style="background:#10b981; border:none; padding:8px 16px; font-size:13px;">
+                        <i class="bi bi-check-circle-fill"></i> Approve Early Punch-Out
+                    </button>
+                </td>
+            </tr>
+        <?php endwhile; ?>
+        </tbody>
+    </table>
+</div>
+<?php endif; ?>
+
+<!-- Attendance Table -->
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <div>
             <h3 style="font-size:20px; margin:0;">⏱️ Remote & Office Employee Attendance Tracker</h3>
-            <div style="font-size:13px; color:var(--text-muted); font-weight:400;">Track exact clock-in times, clock-out times, work modes, and total duration for remote and on-site staff.</div>
+            <div style="font-size:13px; color:var(--text-muted); font-weight:400;">Shift Hours: 9:00 AM to 5:00 PM | Auto 11:59 PM Midnight Punch-Out Enabled.</div>
         </div>
         <span class="badge" style="background:#e0e7ff; color:#3730a3;">Live Attendance Sync</span>
     </div>
@@ -66,8 +119,10 @@ $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
         <tbody>
         <?php $i=1; if ($shifts && $shifts->num_rows > 0): while($s = $shifts->fetch_assoc()): 
             $isActive = ($s['status'] === 'active');
+            $isPending = ($s['status'] === 'pending_approval');
+            $isAuto = ($s['status'] === 'completed_auto');
             $mins = $s['total_minutes'] ?? 0;
-            $durationStr = $isActive ? 'Currently Working...' : (floor($mins / 60) . "h " . ($mins % 60) . "m");
+            $durationStr = $isActive ? 'Currently Working...' : ($isPending ? 'Approval Pending' : (floor($mins / 60) . "h " . ($mins % 60) . "m"));
         ?>
             <tr>
                 <td><?php echo $i++; ?></td>
@@ -89,9 +144,15 @@ $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
                 <td style="color:#64748b;"><?php echo $s['clock_out'] ? date('h:i A', strtotime($s['clock_out'])) : '—'; ?></td>
                 <td style="font-weight:700; color:<?php echo $isActive?'#10b981':'#334155'; ?>;"><?php echo $durationStr; ?></td>
                 <td>
-                    <span class="badge" style="background:<?php echo $isActive?'#d1fae5':'#f1f5f9'; ?>; color:<?php echo $isActive?'#065f46':'#64748b'; ?>;">
-                        <?php echo $isActive ? '🟢 Active Online' : '⚪ Shift Ended'; ?>
-                    </span>
+                    <?php if ($isActive): ?>
+                        <span class="badge" style="background:#d1fae5; color:#065f46;">🟢 Active Online</span>
+                    <?php elseif ($isPending): ?>
+                        <span class="badge" style="background:#fee2e2; color:#991b1b;">⚠️ Approval Pending</span>
+                    <?php elseif ($isAuto): ?>
+                        <span class="badge" style="background:#f3e8ff; color:#6b21a8;">🌙 Auto 11:59 PM Punched Out</span>
+                    <?php else: ?>
+                        <span class="badge" style="background:#f1f5f9; color:#64748b;">⚪ Shift Ended</span>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endwhile; else: ?>
@@ -100,5 +161,28 @@ $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
         </tbody>
     </table>
 </div>
+
+<script>
+function approveEarlyExit(logId) {
+    if (!confirm("Approve early Punch-Out for this employee?")) return;
+    const formData = new FormData();
+    formData.append('action', 'admin_approve');
+    formData.append('log_id', logId);
+
+    fetch("../api_attendance.php", {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert(res.message);
+            window.location.reload();
+        } else {
+            alert(res.error || "Approval failed");
+        }
+    });
+}
+</script>
 
 <?php include __DIR__."/../includes/footer.php"; ?>
