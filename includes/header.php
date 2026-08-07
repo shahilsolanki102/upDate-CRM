@@ -101,6 +101,54 @@ function isActive($pageName) {
     flex-shrink: 0;
   }
 
+  /* Notifications Dropdown */
+  .notif-wrapper { position: relative; display: inline-block; }
+  .notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 2px solid #ffffff;
+    display: none;
+  }
+  .notif-dropdown-panel {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    width: 340px;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+    z-index: 9999;
+    display: none;
+    overflow: hidden;
+  }
+  .notif-header {
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.4;
+  }
+  .notif-item.unread {
+    background: #eff6ff;
+    font-weight: 600;
+  }
+
   /* Shift Tracker Banner */
   .shift-banner {
     background: #ffffff;
@@ -257,7 +305,27 @@ function isActive($pageName) {
         <input class="search" id="liveSearchInput" placeholder="Search tasks, notes, users..." autocomplete="off"/>
         <div class="search-results-dropdown" id="searchResultsDropdown"></div>
       </div>
-      <a class="icon" href="#" title="Notifications"><i class="bi bi-bell-fill" style="color: #f59e0b;"></i></a>
+
+      <!-- Real-Time Notification Bell Dropdown -->
+      <div class="notif-wrapper">
+        <a class="icon" href="javascript:void(0)" id="notifBellBtn" title="Notifications">
+          <i class="bi bi-bell-fill" style="color: #f59e0b;"></i>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </a>
+
+        <div class="notif-dropdown-panel" id="notifDropdownPanel">
+          <div class="notif-header">
+            <span style="font-weight:700; font-size:14px; color:var(--text-dark);">🔔 Notifications</span>
+            <button onclick="markAllNotificationsRead()" style="background:none; border:none; color:var(--accent-blue); font-size:12px; font-weight:700; cursor:pointer;">
+              Mark all as read
+            </button>
+          </div>
+          <div id="notifListContent" style="max-height:300px; overflow-y:auto;">
+            <div style="padding:20px; text-align:center; color:#777; font-size:13px;">Loading notifications...</div>
+          </div>
+        </div>
+      </div>
+
       <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/whatsapp.php' : $depth.'user/contact_admin.php');?>" title="WhatsApp Messaging"><i class="bi bi-whatsapp" style="color: #25d366;"></i></a>
       <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/gmail.php' : $depth.'user/contact_admin.php');?>" title="Email Dispatcher"><i class="bi bi-envelope-at-fill" style="color: #ea4335;"></i></a>
       <a class="btn danger-btn" href="<?php echo $depth; ?>logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
@@ -288,6 +356,51 @@ function isActive($pageName) {
 <script>
 const basePath = "<?php echo $depth; ?>";
 let globalIsShiftHours = false;
+
+function fetchNotifications() {
+  fetch(basePath + "api_notifications.php?action=fetch")
+    .then(r => r.json())
+    .then(data => {
+      const badge = document.getElementById("notifBadge");
+      const listContent = document.getElementById("notifListContent");
+
+      if (data.unread > 0) {
+        badge.innerText = data.unread;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      if (data.notifications && data.notifications.length > 0) {
+        let html = '';
+        data.notifications.forEach(n => {
+          html += `
+            <div class="notif-item ${n.is_read ? '' : 'unread'}">
+              <div>${n.message}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${n.time}</div>
+            </div>
+          `;
+        });
+        listContent.innerHTML = html;
+      } else {
+        listContent.innerHTML = '<div style="padding:20px; text-align:center; color:#777; font-size:13px;">No notifications</div>';
+      }
+    });
+}
+
+function markAllNotificationsRead() {
+  const formData = new FormData();
+  formData.append('action', 'mark_read');
+
+  fetch(basePath + "api_notifications.php", {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.json())
+  .then(res => {
+    fetchNotifications();
+  });
+}
 
 function checkShiftStatus() {
   fetch(basePath + "api_attendance.php?action=status")
@@ -369,6 +482,27 @@ function punchShift(action, mode, reason = '') {
 
 document.addEventListener("DOMContentLoaded", function() {
   checkShiftStatus();
+  fetchNotifications();
+  setInterval(fetchNotifications, 15000); // Live poll notifications every 15s
+
+  const notifBtn = document.getElementById("notifBellBtn");
+  const notifPanel = document.getElementById("notifDropdownPanel");
+
+  if (notifBtn && notifPanel) {
+    notifBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      notifPanel.style.display = (notifPanel.style.display === "block") ? "none" : "block";
+      if (notifPanel.style.display === "block") {
+        fetchNotifications();
+      }
+    });
+
+    document.addEventListener("click", function(e) {
+      if (!notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+        notifPanel.style.display = "none";
+      }
+    });
+  }
 
   const searchInput = document.getElementById("liveSearchInput");
   const dropdown = document.getElementById("searchResultsDropdown");
