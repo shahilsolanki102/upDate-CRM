@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS notifications (
 ");
 
 if ($action === 'fetch') {
-    $res = $conn->query("SELECT * FROM notifications WHERE user_id = $uid ORDER BY id DESC LIMIT 10");
+    $whereClause = ($role === 'admin') ? "(user_id = $uid OR user_id = 1)" : "user_id = $uid";
+    $res = $conn->query("SELECT * FROM notifications WHERE $whereClause ORDER BY id DESC LIMIT 10");
     $list = [];
     $unreadCnt = 0;
 
@@ -71,7 +72,12 @@ if ($action === 'fetch') {
 }
 
 if ($action === 'mark_read') {
-    $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid");
+    if ($role === 'admin') {
+        $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid OR user_id = 1");
+    } else {
+        $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid");
+    }
+
     ob_clean();
     header('Content-Type: application/json');
     echo json_encode(['success' => true, 'message' => 'All notifications marked as read']);
