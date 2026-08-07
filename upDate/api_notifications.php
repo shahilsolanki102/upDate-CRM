@@ -13,6 +13,7 @@ if (!isset($_SESSION['uid'])) {
 }
 
 $uid    = (int)$_SESSION['uid'];
+$role   = $_SESSION['role'] ?? 'user';
 $action = $_POST['action'] ?? $_GET['action'] ?? 'fetch';
 
 // Ensure notifications table exists
@@ -34,10 +35,26 @@ if ($action === 'fetch') {
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             if ($row['is_read'] == 0) $unreadCnt++;
+
+            // Compute smart target URL based on notification message and user role
+            $msg = $row['message'];
+            $url = ($role === 'admin') ? 'admin/dashboard.php' : 'user/dashboard.php';
+
+            if (stripos($msg, 'Task Ticket') !== false || stripos($msg, 'Task') !== false) {
+                $url = ($role === 'admin') ? 'admin/tasks.php' : 'user/tasks.php';
+            } elseif (stripos($msg, 'Announcement') !== false) {
+                $url = ($role === 'admin') ? 'admin/announcements.php' : 'user/announcements.php';
+            } elseif (stripos($msg, 'Punch-Out') !== false || stripos($msg, 'Shift') !== false) {
+                $url = ($role === 'admin') ? 'admin/attendance.php' : 'user/dashboard.php';
+            } elseif (stripos($msg, 'Profile') !== false) {
+                $url = 'user/profile.php';
+            }
+
             $list[] = [
                 'id' => $row['id'],
                 'message' => htmlspecialchars($row['message']),
                 'is_read' => (int)$row['is_read'],
+                'url' => $url,
                 'time' => date('d M, h:i A', strtotime($row['created_at']))
             ];
         }

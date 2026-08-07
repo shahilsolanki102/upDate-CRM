@@ -143,6 +143,11 @@ function isActive($pageName) {
     font-size: 13px;
     color: var(--text-dark);
     line-height: 1.4;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .notif-item:hover {
+    background: #f8fafc;
   }
   .notif-item.unread {
     background: #eff6ff;
@@ -373,13 +378,14 @@ function fetchNotifications() {
         badge.style.display = "inline-block";
       } else {
         badge.style.display = "none";
+        badge.innerText = "0";
       }
 
       if (data.notifications && data.notifications.length > 0) {
         let html = '';
         data.notifications.forEach(n => {
           html += `
-            <div class="notif-item ${n.is_read ? '' : 'unread'}">
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="location.href='${basePath}${n.url}'">
               <div>${n.message}</div>
               <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${n.time}</div>
             </div>
@@ -394,6 +400,14 @@ function fetchNotifications() {
 }
 
 function markAllNotificationsRead() {
+  const badge = document.getElementById("notifBadge");
+  if (badge) {
+    badge.style.display = "none";
+    badge.innerText = "0";
+  }
+
+  document.querySelectorAll('.notif-item').forEach(el => el.classList.remove('unread'));
+
   const formData = new FormData();
   formData.append('action', 'mark_read');
 
