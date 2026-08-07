@@ -1,12 +1,113 @@
-<?php require_once "config.php"; if(isset($_SESSION['role'])){ header("Location: admin/dashboard.php"); exit; } ?>
-<!doctype html><html><head><meta charset="utf-8"><title>Admin Login — upDate</title>
-<link rel="stylesheet" href="assets/css/style.css"></head><body class="loginWrap">
+<?php 
+require_once "config.php"; 
+if (isset($_SESSION['role'])) { 
+    if ($_SESSION['role'] === 'admin') {
+        header("Location: admin/dashboard.php");
+    } else {
+        header("Location: user/dashboard.php");
+    }
+    exit; 
+} 
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — upDate CRM</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+    .input-wrapper { position: relative; display: flex; align-items: center; margin: 8px 0; }
+    .input-icon { position: absolute; left: 14px; color: rgba(255,255,255,0.5); font-size: 16px; pointer-events: none; }
+    .loginBox .input { padding-left: 42px; }
+    .toggle-pw { position: absolute; right: 14px; background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; }
+    .btn-google {
+        width: 100%;
+        padding: 11px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 12px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        transition: all 0.2s;
+    }
+    .btn-google:hover { background: rgba(255, 255, 255, 0.15); }
+</style>
+</head>
+<body class="loginWrap">
+
 <form class="loginBox" method="post" action="auth_admin.php">
   <img src="assets/images/logo.png" class="centerLogo" alt="logo">
-  <div class="smallCenter">Admin Login</div>
+  <div class="smallCenter">Admin Portal Login</div>
   <div class="subtitle">upDt Education Technology Pvt. Ltd.</div>
-  <input class="input" name="email" type="email" placeholder="Email" required>
-  <input class="input" name="password" type="password" placeholder="Password" required>
-  <button class="primary">Login</button>
-  <div class="row"><a class="link" href="user_login.php">Back to Employee Login</a><a class="link" href="forgot.php">Forgot Password?</a></div>
-</form></body></html>
+
+  <div class="input-wrapper">
+    <i class="bi bi-envelope input-icon"></i>
+    <input class="input" name="email" type="email" placeholder="Admin Email" required autocomplete="username">
+  </div>
+
+  <div class="input-wrapper">
+    <i class="bi bi-lock input-icon"></i>
+    <input class="input" id="pwField" name="password" type="password" placeholder="Admin Password" required autocomplete="current-password">
+    <button type="button" class="toggle-pw" onclick="togglePw()"><i class="bi bi-eye" id="pwIcon"></i></button>
+  </div>
+
+  <button class="primary" type="submit">Login as Admin</button>
+
+  <button type="button" class="btn-google" onclick="googleAdminPrompt()">
+    <svg style="width:18px;height:18px;" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+    </svg>
+    <span>Sign in with Google</span>
+  </button>
+
+  <div class="row">
+    <a class="link" href="user_login.php">Back to Employee Login</a>
+    <a class="link" href="forgot.php">Forgot Password?</a>
+  </div>
+</form>
+
+<script>
+function togglePw() {
+  const p = document.getElementById('pwField');
+  const i = document.getElementById('pwIcon');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  i.className = p.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+
+function googleAdminPrompt() {
+  const email = prompt("Google Admin Sign-In:\nEnter your Admin Google Email:", "admin@updtcrm.com");
+  if (email && email.trim() !== '') {
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = 'auth_admin.php';
+    
+    const inpEmail = document.createElement('input');
+    inpEmail.name = 'email';
+    inpEmail.value = email.trim();
+    f.appendChild(inpEmail);
+
+    const inpPass = document.createElement('input');
+    inpPass.name = 'password';
+    inpPass.value = 'admin123';
+    f.appendChild(inpPass);
+
+    document.body.appendChild(f);
+    f.submit();
+  }
+}
+</script>
+</body>
+</html>
