@@ -84,6 +84,21 @@ function isActive($pageName) {
     font-size: 16px;
     flex-shrink: 0;
   }
+
+  /* Shift Tracker Banner */
+  .shift-banner {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 10px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 </style>
 </head>
 <body>
@@ -104,6 +119,10 @@ function isActive($pageName) {
     </a>
 
     <?php if($isAdmin): ?>
+      <a href="<?php echo $depth; ?>admin/attendance.php" class="link<?php echo isActive('attendance.php'); ?>">
+        <i class="bi bi-stopwatch-fill icon-side" style="color:#10b981;"></i>
+        <span>Work Shift & Remote Log</span>
+      </a>
       <a href="<?php echo $depth; ?>admin/users.php" class="link<?php echo isActive('users.php'); ?>">
         <i class="bi bi-people-fill icon-side"></i>
         <span>Users / Employees</span>
@@ -223,13 +242,87 @@ function isActive($pageName) {
       <a class="btn danger-btn" href="<?php echo $depth; ?>logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
     </div>
   </div>
+
+  <!-- Real-Time Work Shift Clock-In Tracker Bar -->
+  <div class="shift-banner" id="shiftBanner">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <i class="bi bi-stopwatch" style="font-size:22px; color:var(--brand-primary);"></i>
+      <div>
+        <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);" id="shiftStatusTitle">Work Shift Tracker</div>
+        <div style="font-size:12px; color:var(--text-muted);" id="shiftStatusSub">Clock-in when you start work (Remote or Office).</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;" id="shiftActionBtns">
+      <button class="btn" onclick="punchShift('punch_in', 'remote')" style="background:#10b981; border:none; font-size:12.5px; padding:8px 14px;">
+        <i class="bi bi-house-door-fill"></i> 🏠 Punch In (Remote Work)
+      </button>
+      <button class="btn" onclick="punchShift('punch_in', 'office')" style="background:#2563eb; border:none; font-size:12.5px; padding:8px 14px;">
+        <i class="bi bi-building-fill"></i> 🏢 Punch In (Office Work)
+      </button>
+    </div>
+  </div>
+
   <div class="page">
 
 <script>
+const basePath = "<?php echo $depth; ?>";
+
+function checkShiftStatus() {
+  fetch(basePath + "api_attendance.php?action=status")
+    .then(r => r.json())
+    .then(data => {
+      const title = document.getElementById("shiftStatusTitle");
+      const sub = document.getElementById("shiftStatusSub");
+      const btns = document.getElementById("shiftActionBtns");
+
+      if (data.punchedIn) {
+        title.innerHTML = `<span style="color:#10b981;">🟢 Active Work Shift</span> (${data.mode} Mode)`;
+        sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. Your work hours are being recorded.`;
+        btns.innerHTML = `
+          <button class="btn danger-btn" onclick="punchShift('punch_out', '')" style="font-size:12.5px; padding:8px 16px;">
+            <i class="bi bi-stop-circle-fill"></i> 🔴 Punch Out / End Shift
+          </button>
+        `;
+      } else {
+        title.innerHTML = "Work Shift Tracker";
+        sub.innerHTML = "Clock-in when you start work (Remote or Office).";
+        btns.innerHTML = `
+          <button class="btn" onclick="punchShift('punch_in', 'remote')" style="background:#10b981; border:none; font-size:12.5px; padding:8px 14px;">
+            <i class="bi bi-house-door-fill"></i> 🏠 Punch In (Remote Work)
+          </button>
+          <button class="btn" onclick="punchShift('punch_in', 'office')" style="background:#2563eb; border:none; font-size:12.5px; padding:8px 14px;">
+            <i class="bi bi-building-fill"></i> 🏢 Punch In (Office Work)
+          </button>
+        `;
+      }
+    });
+}
+
+function punchShift(action, mode) {
+  const formData = new FormData();
+  formData.append('action', action);
+  formData.append('mode', mode);
+
+  fetch(basePath + "api_attendance.php", {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      alert(res.message || "Shift status updated!");
+      checkShiftStatus();
+    } else {
+      alert(res.error || "Shift error");
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
+  checkShiftStatus();
+
   const searchInput = document.getElementById("liveSearchInput");
   const dropdown = document.getElementById("searchResultsDropdown");
-  const basePath = "<?php echo $depth; ?>";
   let searchTimer;
 
   if (searchInput) {
