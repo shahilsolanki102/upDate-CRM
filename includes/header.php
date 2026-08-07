@@ -38,7 +38,9 @@ function isActive($pageName) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>upDate CRM — Modern Management Portal</title>
+<title>upDate CRM — uD Modern Management Portal</title>
+<!-- uD Favicon Icon -->
+<link rel="icon" type="image/x-icon" href="<?php echo $depth; ?>assets/images/favicon.ico">
 <!-- Google Fonts & Bootstrap Icons -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,7 +107,7 @@ function isActive($pageName) {
 <div class="layout">
 <aside class="sidebar">
   <div class="logoBox">
-    <img src="<?php echo $depth; ?>assets/images/logo.png" class="miniLogo" alt="upDate CRM Logo"/>
+    <img src="<?php echo $depth; ?>assets/images/logo.png" class="miniLogo" alt="uD Brand Logo"/>
     <div class="brand">
       <div class="brand-main">upDate CRM</div>
       <div class="brand-sub">upDt Technology Pvt. Ltd.</div>
