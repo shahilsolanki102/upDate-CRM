@@ -31,30 +31,35 @@ $history = $conn->query("SELECT * FROM activity_log WHERE action LIKE 'Sent Emai
 ?>
 
 <div class="card" style="max-width: 800px; margin: 0 auto 24px;">
-    <h3>✉️ Gmail / Email Dispatcher</h3>
-    <p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">Send professional email communications and announcements.</p>
+    <h3 style="display:flex; align-items:center; gap:10px; font-size:20px; color:var(--text-dark);">
+        <i class="bi bi-envelope-at-fill" style="color:#ea4335; font-size:30px;"></i>
+        <span>Gmail / Email Dispatcher</span>
+    </h3>
+    <p style="color:var(--text-muted); font-size:13.5px; margin-bottom:20px;">Send professional email communications, official notices, and announcements.</p>
 
     <?php if ($msg_status): ?>
-        <div style="background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; padding:10px 14px; border-radius:10px; font-size:14px; margin-bottom:16px;">
-            ✓ <?php echo htmlspecialchars($msg_status); ?>
+        <div style="background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; padding:12px 16px; border-radius:12px; font-size:14px; margin-bottom:18px; display:flex; align-items:center; gap:8px;">
+            <i class="bi bi-check-circle-fill" style="color:#10b981; font-size:18px;"></i>
+            <span><?php echo htmlspecialchars($msg_status); ?></span>
         </div>
     <?php endif; ?>
 
-    <form method="post" action="gmail.php" style="display:grid; gap:14px;">
+    <form method="post" action="gmail.php" style="display:grid; gap:16px;">
         <div>
-            <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Recipient Email</label>
+            <label style="font-size:13px; font-weight:600; margin-bottom:6px; display:block;">Recipient Email Address</label>
             <input class="input" type="email" name="to" placeholder="recipient@example.com" required>
         </div>
         <div>
-            <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Subject Line</label>
+            <label style="font-size:13px; font-weight:600; margin-bottom:6px; display:block;">Subject Line</label>
             <input class="input" name="subject" placeholder="Important Update regarding upDate CRM" required>
         </div>
         <div>
-            <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Email Body</label>
+            <label style="font-size:13px; font-weight:600; margin-bottom:6px; display:block;">Email Body</label>
             <textarea class="input" name="message" rows="5" placeholder="Write your email body..." required style="resize:vertical;"></textarea>
         </div>
-        <button type="submit" class="btn" style="width:fit-content; padding:12px 24px;">
-            <span>✉️ Dispatch Email</span>
+        <button type="submit" class="btn" style="width:fit-content; padding:12px 24px; background:#ea4335; border:none;">
+            <i class="bi bi-envelope-at-fill"></i>
+            <span>Dispatch Email</span>
         </button>
     </form>
 </div>

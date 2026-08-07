@@ -30,26 +30,31 @@ $history = $conn->query("SELECT * FROM activity_log WHERE action LIKE 'Sent What
 ?>
 
 <div class="card" style="max-width: 800px; margin: 0 auto 24px;">
-    <h3>🟢 WhatsApp Dispatcher</h3>
-    <p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">Send instant WhatsApp notifications to customers and employees.</p>
+    <h3 style="display:flex; align-items:center; gap:10px; font-size:20px; color:var(--text-dark);">
+        <i class="bi bi-whatsapp" style="color:#25d366; font-size:30px;"></i>
+        <span>WhatsApp Dispatcher</span>
+    </h3>
+    <p style="color:var(--text-muted); font-size:13.5px; margin-bottom:20px;">Send instant WhatsApp notifications and official work alerts to customers and employees.</p>
 
     <?php if ($msg_status): ?>
-        <div style="background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; padding:10px 14px; border-radius:10px; font-size:14px; margin-bottom:16px;">
-            ✓ <?php echo htmlspecialchars($msg_status); ?>
+        <div style="background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; padding:12px 16px; border-radius:12px; font-size:14px; margin-bottom:18px; display:flex; align-items:center; gap:8px;">
+            <i class="bi bi-check-circle-fill" style="color:#10b981; font-size:18px;"></i>
+            <span><?php echo htmlspecialchars($msg_status); ?></span>
         </div>
     <?php endif; ?>
 
-    <form method="post" action="whatsapp.php" style="display:grid; gap:14px;">
+    <form method="post" action="whatsapp.php" style="display:grid; gap:16px;">
         <div>
-            <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Recipient Phone Number or User ID</label>
-            <input class="input" name="to" placeholder="+919876543210 or User ID" required>
+            <label style="font-size:13px; font-weight:600; margin-bottom:6px; display:block;">Recipient Phone Number or Employee ID</label>
+            <input class="input" name="to" placeholder="+919876543210 or Employee ID" required>
         </div>
         <div>
-            <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Message Content</label>
+            <label style="font-size:13px; font-weight:600; margin-bottom:6px; display:block;">Message Content</label>
             <textarea class="input" name="message" rows="4" placeholder="Write your WhatsApp notification message..." required style="resize:vertical;"></textarea>
         </div>
-        <button type="submit" class="btn" style="width:fit-content; padding:12px 24px;">
-            <span>🟢 Send WhatsApp Message</span>
+        <button type="submit" class="btn" style="width:fit-content; padding:12px 24px; background:#25d366; border:none;">
+            <i class="bi bi-whatsapp"></i>
+            <span>Send WhatsApp Message</span>
         </button>
     </form>
 </div>
