@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
 )
 ");
 
-// Auto Midnight 11:59 PM Punch Out check
+// Auto Midnight 11:59 PM Punch Out check for past shifts or past 11:59 PM
 $conn->query("
     UPDATE attendance_logs 
     SET clock_out = CONCAT(DATE(clock_in), ' 23:59:00'),
@@ -36,6 +36,10 @@ $conn->query("
         status = 'completed_auto'
     WHERE status = 'active' AND (DATE(clock_in) < CURDATE() OR (CURDATE() = DATE(clock_in) AND CURRENT_TIME() >= '23:59:00'))
 ");
+
+// Check current server shift hours (9:00 AM to 5:00 PM IST)
+$currentHour = (int)date('H'); // 0-23 in IST
+$isShiftHours = ($currentHour >= 9 && $currentHour < 17); // True strictly between 09:00 and 16:59 IST
 
 // 1. Get Current Status
 if ($action === 'status') {
@@ -46,14 +50,16 @@ if ($action === 'status') {
             'success'          => true,
             'punchedIn'        => true,
             'pendingApproval' => ($activeLog['status'] === 'pending_approval'),
+            'isShiftHours'     => $isShiftHours,
             'clockIn'          => date('h:i A', strtotime($activeLog['clock_in'])),
             'mode'             => ucfirst($activeLog['work_mode']),
             'logId'            => $activeLog['id']
         ]);
     } else {
         echo json_encode([
-            'success'   => true,
-            'punchedIn' => false
+            'success'      => true,
+            'punchedIn'    => false,
+            'isShiftHours' => $isShiftHours
         ]);
     }
     exit;
@@ -78,7 +84,7 @@ if ($action === 'punch_in') {
     exit;
 }
 
-// 3. Punch Out (with 9:00 AM - 5:00 PM Admin Approval Enforcement)
+// 3. Punch Out (Instant after 5:00 PM IST; Reason & Admin approval between 9:00 AM & 5:00 PM IST)
 if ($action === 'punch_out') {
     $res = $conn->query("SELECT * FROM attendance_logs WHERE user_id=$uid AND status IN ('active', 'pending_approval') ORDER BY id DESC LIMIT 1");
     if (!$res || $res->num_rows === 0) {
@@ -88,13 +94,8 @@ if ($action === 'punch_out') {
 
     $log = $res->fetch_assoc();
     $logId = $log['id'];
-    $currentHour = (int)date('H'); // 0-23 format
-    $currentMinute = (int)date('i');
 
-    // Check if current time is between 9:00 AM (09:00) and 5:00 PM (17:00)
-    $isShiftHours = ($currentHour >= 9 && $currentHour < 17);
-
-    // If between 9:00 AM and 5:00 PM, require Admin Approval!
+    // Strictly between 9:00 AM and 5:00 PM IST -> Requires Admin Approval & Reason
     if ($isShiftHours && $log['status'] !== 'pending_approval') {
         $reason = trim($_POST['reason'] ?? '');
         if (empty($reason)) {
@@ -133,7 +134,7 @@ if ($action === 'punch_out') {
         exit;
     }
 
-    // Normal Punch Out after 5:00 PM
+    // Direct Instant Punch Out (After 5:00 PM IST or Before 9:00 AM IST)
     $clockIn = new DateTime($log['clock_in']);
     $clockOut = new DateTime();
     $diff = $clockIn->diff($clockOut);
@@ -148,7 +149,7 @@ if ($action === 'punch_out') {
     $logMsg = "Ended work shift (Worked: $hoursStr)";
     $conn->query("INSERT INTO activity_log (user_id, action, created_at) VALUES ($uid, '$logMsg', NOW())");
 
-    echo json_encode(['success' => true, 'message' => "Punched Out! Total work duration: $hoursStr"]);
+    echo json_encode(['success' => true, 'message' => "Punched Out successfully! Total work duration: $hoursStr"]);
     exit;
 }
 

@@ -249,7 +249,7 @@ function isActive($pageName) {
       <i class="bi bi-stopwatch" style="font-size:22px; color:var(--brand-primary);"></i>
       <div>
         <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);" id="shiftStatusTitle">Work Shift Tracker</div>
-        <div style="font-size:12px; color:var(--text-muted);" id="shiftStatusSub">Shift Hours: 9:00 AM to 5:00 PM (Punch-out requires Admin approval during shift).</div>
+        <div style="font-size:12px; color:var(--text-muted);" id="shiftStatusSub">Shift Hours: 9:00 AM to 5:00 PM (Direct Punch-out available anytime after 5:00 PM).</div>
       </div>
     </div>
     <div style="display:flex; gap:8px;" id="shiftActionBtns">
@@ -266,6 +266,7 @@ function isActive($pageName) {
 
 <script>
 const basePath = "<?php echo $depth; ?>";
+let globalIsShiftHours = false;
 
 function checkShiftStatus() {
   fetch(basePath + "api_attendance.php?action=status")
@@ -274,6 +275,7 @@ function checkShiftStatus() {
       const title = document.getElementById("shiftStatusTitle");
       const sub = document.getElementById("shiftStatusSub");
       const btns = document.getElementById("shiftActionBtns");
+      globalIsShiftHours = data.isShiftHours;
 
       if (data.punchedIn) {
         if (data.pendingApproval) {
@@ -286,7 +288,7 @@ function checkShiftStatus() {
           `;
         } else {
           title.innerHTML = `<span style="color:#10b981;">🟢 Active Work Shift</span> (${data.mode} Mode)`;
-          sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. (Note: 9:00 AM - 5:00 PM exit requires Admin Approval).`;
+          sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. ${globalIsShiftHours ? '(Note: 9 AM - 5 PM exit requires Admin Approval)' : '(After 5 PM: Direct Punch-Out Available)'}`;
           btns.innerHTML = `
             <button class="btn danger-btn" onclick="handlePunchOut()" style="font-size:12.5px; padding:8px 16px;">
               <i class="bi bi-stop-circle-fill"></i> 🔴 Punch Out / End Shift
@@ -309,9 +311,7 @@ function checkShiftStatus() {
 }
 
 function handlePunchOut() {
-  const currentHour = new Date().getHours();
-  // Shift hours 9:00 AM to 5:00 PM (9 to 16)
-  if (currentHour >= 9 && currentHour < 17) {
+  if (globalIsShiftHours) {
     const reason = prompt("⚠️ Official Shift Hours (9:00 AM to 5:00 PM).\nEmergency Punch-Out requires Admin approval.\n\nPlease enter your emergency reason for Admin review:");
     if (reason === null) return;
     if (reason.trim() === '') {
@@ -320,9 +320,8 @@ function handlePunchOut() {
     }
     punchShift('punch_out', '', reason.trim());
   } else {
-    if (confirm("End your work shift now?")) {
-      punchShift('punch_out', '', '');
-    }
+    // After 5:00 PM -> DIRECT INSTANT PUNCH OUT WITHOUT ANY PROMPT
+    punchShift('punch_out', '', '');
   }
 }
 
