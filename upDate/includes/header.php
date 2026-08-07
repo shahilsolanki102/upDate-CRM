@@ -11,6 +11,16 @@ $role     = $_SESSION['role'];
 $name     = $_SESSION['name'] ?? ($role === 'admin' ? 'Admin' : 'User');
 $isAdmin  = ($role === 'admin');
 
+// Fetch user profile picture for avatar display in header topbar
+$user_pic = '';
+if (isset($_SESSION['uid'])) {
+    $uid_hdr = (int)$_SESSION['uid'];
+    $uRes = $conn->query("SELECT profile_pic FROM users WHERE id=$uid_hdr");
+    if ($uRes && $uRow = $uRes->fetch_assoc()) {
+        $user_pic = $uRow['profile_pic'] ?? '';
+    }
+}
+
 // 🔐 Role-based restriction
 $current_path = $_SERVER['PHP_SELF'];
 
@@ -219,9 +229,14 @@ function isActive($pageName) {
 <main class="content">
   <div class="topbar">
     <div class="welcome">
-      <div class="avatar-sm">
-        <?php echo strtoupper(substr($name, 0, 1)); ?>
-      </div>
+      <?php if (!empty($user_pic) && file_exists(__DIR__ . '/../uploads/profiles/' . $user_pic)): ?>
+        <img src="<?php echo $depth; ?>uploads/profiles/<?php echo urlencode($user_pic); ?>" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid var(--accent-blue); box-shadow:0 4px 10px rgba(0,0,0,0.15);" alt="Avatar">
+      <?php else: ?>
+        <div class="avatar-sm">
+          <?php echo strtoupper(substr($name, 0, 1)); ?>
+        </div>
+      <?php endif; ?>
+
       <div>
         <div style="font-size: 15px; font-weight: 700; color: var(--text-dark);">
           Welcome back, <?php echo htmlspecialchars($name); ?> 👋

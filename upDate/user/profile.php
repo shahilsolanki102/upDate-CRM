@@ -1,7 +1,6 @@
 <?php
 require_once "../config.php";
 $requireLogin = 'user';
-include __DIR__ . "/../includes/header.php";
 
 $msg_status = '';
 $uid   = $_SESSION['uid'] ?? 0;
@@ -12,7 +11,7 @@ if (!file_exists(__DIR__ . '/../uploads/profiles/')) {
     mkdir(__DIR__ . '/../uploads/profiles/', 0777, true);
 }
 
-// Fetch logged in user details
+// Fetch logged in user details first
 if ($uid > 0) {
     $res = $conn->query("SELECT * FROM users WHERE id = $uid");
     if ($res && $res->num_rows > 0) {
@@ -20,7 +19,7 @@ if ($uid > 0) {
     }
 }
 
-// Handle Form Submission
+// Handle Form Submission BEFORE header is included!
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name              = trim($_POST['name'] ?? '');
     $phone             = trim($_POST['phone'] ?? '');
@@ -65,19 +64,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Log activity for Admin monitoring
-        $actionLog = "Updated profile details & account settings ($name).";
+        $actionLog = "Updated profile details & photo ($name).";
         $conn->query("INSERT INTO activity_log (user_id, action, created_at) VALUES ($uid, '$actionLog', NOW())");
 
         $_SESSION['name'] = $name;
-        $msg_status = "Profile & Account Settings updated successfully!";
+        $msg_status = "Profile photo & account settings updated successfully!";
 
-        // Refresh user object
+        // Refresh user object after update
         $res = $conn->query("SELECT * FROM users WHERE id = $uid");
         if ($res && $res->num_rows > 0) {
             $user = $res->fetch_assoc();
         }
     }
 }
+
+// Now include header after processing POST!
+include __DIR__ . "/../includes/header.php";
 
 // Fetch stats for profile widgets
 $taskStats = $conn->query("SELECT COUNT(*) c FROM tasks WHERE user_id=$uid OR assigned_to=$uid");
@@ -229,7 +231,7 @@ $joiningDate = !empty($user['joining_date']) ? date('d M Y', strtotime($user['jo
             <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:20px; padding:16px; background:#f8fafc; border-radius:16px; border:1px solid #e2e8f0;">
                 <i class="bi bi-camera-fill" style="font-size:32px; color:var(--brand-primary);"></i>
                 <div>
-                    <label style="font-size:13px; font-weight:700; color:var(--text-dark); display:block; margin-bottom:4px;">Update Profile Photo / Avatar</label>
+                    <label style="font-size:13px; font-weight:700; color:var(--text-dark); display:block; margin-bottom:4px;">Upload Profile Photo / Avatar</label>
                     <input type="file" name="profile_photo" accept="image/*" class="input" style="padding:8px 12px; font-size:13px;">
                 </div>
             </div>
