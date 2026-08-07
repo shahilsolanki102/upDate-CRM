@@ -45,6 +45,46 @@ function isActive($pageName) {
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="<?php echo $depth; ?>assets/css/style.css">
+<style>
+  .search-wrapper { position: relative; }
+  .search-results-dropdown {
+    position: absolute;
+    top: 48px;
+    left: 0;
+    width: 320px;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.15);
+    z-index: 999;
+    max-height: 380px;
+    overflow-y: auto;
+    display: none;
+    padding: 8px 0;
+  }
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: background 0.15s;
+  }
+  .search-result-item:hover {
+    background: #f1f5f9;
+  }
+  .search-result-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+</style>
 </head>
 <body>
 <div class="layout">
@@ -174,7 +214,8 @@ function isActive($pageName) {
     <div class="actions">
       <div class="search-wrapper">
         <i class="bi bi-search search-icon"></i>
-        <input class="search" placeholder="Search tasks, notes, users..."/>
+        <input class="search" id="liveSearchInput" placeholder="Search tasks, notes, users..." autocomplete="off"/>
+        <div class="search-results-dropdown" id="searchResultsDropdown"></div>
       </div>
       <a class="icon" href="#" title="Notifications"><i class="bi bi-bell-fill" style="color: #f59e0b;"></i></a>
       <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/whatsapp.php' : $depth.'user/contact_admin.php');?>" title="WhatsApp Messaging"><i class="bi bi-whatsapp" style="color: #25d366;"></i></a>
@@ -183,3 +224,61 @@ function isActive($pageName) {
     </div>
   </div>
   <div class="page">
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const searchInput = document.getElementById("liveSearchInput");
+  const dropdown = document.getElementById("searchResultsDropdown");
+  const basePath = "<?php echo $depth; ?>";
+  let searchTimer;
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function() {
+      clearTimeout(searchTimer);
+      const query = this.value.trim();
+
+      if (query.length < 2) {
+        dropdown.style.display = "none";
+        dropdown.innerHTML = "";
+        return;
+      }
+
+      searchTimer = setTimeout(() => {
+        fetch(basePath + "api_search.php?q=" + encodeURIComponent(query))
+          .then(res => res.json())
+          .then(data => {
+            if (!data || data.length === 0) {
+              dropdown.innerHTML = '<div style="padding:12px; text-align:center; color:#777; font-size:13px;">No matching results found</div>';
+            } else {
+              let html = '';
+              data.forEach(item => {
+                html += `
+                  <a href="${basePath}${item.url}" class="search-result-item">
+                    <div class="search-result-icon" style="background:${item.color}15; color:${item.color};">
+                      <i class="bi ${item.icon}"></i>
+                    </div>
+                    <div>
+                      <div style="font-weight:600; font-size:13.5px;">${item.title}</div>
+                      <div style="font-size:11.5px; color:#64748b;">${item.subtitle}</div>
+                    </div>
+                  </a>
+                `;
+              });
+              dropdown.innerHTML = html;
+            }
+            dropdown.style.display = "block";
+          })
+          .catch(() => {
+            dropdown.style.display = "none";
+          });
+      }, 250);
+    });
+
+    document.addEventListener("click", function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+  }
+});
+</script>
