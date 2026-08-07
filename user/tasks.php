@@ -36,18 +36,18 @@ $completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
 <div class="grid">
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-            <h3>Total Assigned Tasks</h3>
+            <h3>Total Assigned Tickets</h3>
             <div class="metric"><?php echo $totalCnt; ?></div>
-            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Assigned by Admin</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Work Tickets Issued</div>
         </div>
         <div style="width:50px; height:50px; border-radius:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:24px;">
-            <i class="bi bi-clipboard-data-fill"></i>
+            <i class="bi bi-ticket-perforated-fill"></i>
         </div>
     </div>
 
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-            <h3>Pending Tasks</h3>
+            <h3>Pending Action</h3>
             <div class="metric" style="color:#f59e0b;"><?php echo $pendingCnt; ?></div>
             <div style="font-size:12px; color:#f59e0b; margin-top:4px; font-weight:600;">⏳ Awaiting PDF Submission</div>
         </div>
@@ -83,8 +83,8 @@ $completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
         <div>
-            <h3 style="font-size:18px; margin:0;">📋 My Workspace Tasks</h3>
-            <div style="font-size:13px; color:var(--text-muted);">Manage your assigned work and submit PDF reports before due dates.</div>
+            <h3 style="font-size:18px; margin:0;">🎫 My Assigned Work Tickets</h3>
+            <div style="font-size:13px; color:var(--text-muted);">Manage official work tickets and submit PDF reports before due dates.</div>
         </div>
 
         <div style="display:flex; gap:8px;">
@@ -99,17 +99,20 @@ $completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
             <?php foreach($allTasks as $t): 
                 $isSubmitted = !empty($t['submission_file']);
                 $cardStatus = $isSubmitted ? 'completed' : 'pending';
+                $tid = $t['ticket_id'] ?: ("TK-" . date('Y') . "-" . str_pad($t['id'], 5, '0', STR_PAD_LEFT));
+                $p = $t['priority'] ?: 'Normal';
             ?>
                 <div class="task-card-item" data-status="<?php echo $cardStatus; ?>" style="background:#ffffff; border:1.5px solid <?php echo $isSubmitted?'#a7f3d0':'#e2e8f0'; ?>; border-radius:18px; padding:20px; box-shadow:0 4px 14px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.2s;">
                     
                     <div>
-                        <!-- Header Badges -->
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <span class="badge" style="background:<?php echo $isSubmitted?'#d1fae5':'#fffbeb'; ?>; color:<?php echo $isSubmitted?'#065f46':'#b45309'; ?>; border:none; padding:4px 10px; font-weight:700;">
-                                <?php echo $isSubmitted ? '✓ Completed & Submitted' : '⏳ Pending Action'; ?>
+                        <!-- Ticket Header & Priority Badges -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;">
+                            <span class="badge" style="background:#e0e7ff; color:#3730a3; font-weight:800; padding:4px 10px;">
+                                🎟️ <?php echo htmlspecialchars($tid); ?>
                             </span>
-                            <span style="font-size:12px; color:#64748b; font-weight:600;">
-                                <i class="bi bi-calendar-event"></i> <?php echo $t['due_date'] ? date('d M Y', strtotime($t['due_date'])) : 'No due date'; ?>
+
+                            <span class="badge" style="background:<?php echo $p==='Urgent'?'#fee2e2':($p==='High'?'#ffedd5':'#f1f5f9'); ?>; color:<?php echo $p==='Urgent'?'#991b1b':($p==='High'?'#c2410c':'#334155'); ?>; font-weight:700;">
+                                <?php echo $p==='Urgent'?'🔥 Urgent':($p==='High'?'⚡ High':'🌱 Normal'); ?>
                             </span>
                         </div>
 
@@ -117,6 +120,11 @@ $completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
                         <h4 style="margin:0 0 8px 0; font-size:16.5px; color:var(--text-dark); line-height:1.4;">
                             <?php echo htmlspecialchars($t['title']); ?>
                         </h4>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:12px; color:#64748b;">
+                            <span><i class="bi bi-clock"></i> Due: <strong><?php echo $t['due_date'] ? date('d M Y', strtotime($t['due_date'])) : 'No due date'; ?></strong></span>
+                            <a href="../view_ticket.php?id=<?php echo $t['id']; ?>" target="_blank" class="link" style="font-weight:700;">🎫 View Ticket Card →</a>
+                        </div>
 
                         <?php if (!empty($t['description'])): ?>
                             <p style="font-size:13.5px; color:var(--text-muted); margin:0 0 16px 0; line-height:1.5; background:#f8fafc; padding:10px 12px; border-radius:10px; border-left:3px solid var(--accent-blue);">
@@ -126,7 +134,7 @@ $completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
                     </div>
 
                     <!-- Submission / Action Section -->
-                    <div style="border-top:1px solid #f1f5f9; pt-3; margin-top:14px; padding-top:14px;">
+                    <div style="border-top:1px solid #f1f5f9; margin-top:14px; padding-top:14px;">
                         <?php if ($isSubmitted): ?>
                             <div style="display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; padding:10px 14px; border-radius:12px; border:1px solid #a7f3d0;">
                                 <div style="display:flex; align-items:center; gap:8px;">
@@ -164,9 +172,9 @@ $completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
         </div>
     <?php else: ?>
         <div style="text-align:center; padding:40px 20px; color:#64748b;">
-            <i class="bi bi-check2-circle" style="font-size:48px; color:#10b981;"></i>
-            <h4 style="margin:10px 0 4px 0; color:var(--text-dark);">No Tasks Assigned</h4>
-            <p style="font-size:13.5px; margin:0;">You have zero pending tasks assigned by admin.</p>
+            <i class="bi bi-ticket-perforated" style="font-size:48px; color:#3b82f6;"></i>
+            <h4 style="margin:10px 0 4px 0; color:var(--text-dark);">No Work Tickets Issued</h4>
+            <p style="font-size:13.5px; margin:0;">You have zero pending work tickets assigned by admin.</p>
         </div>
     <?php endif; ?>
 </div>
