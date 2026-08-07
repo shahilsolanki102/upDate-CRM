@@ -30,7 +30,7 @@ body {
 /* Layout */
 .layout {
     display: flex;
-    min-height: 100vh;
+    min-height: calc(100vh - 70px);
 }
 
 /* Sidebar */
@@ -446,3 +446,80 @@ tr:hover td {
 .link:hover {
     text-decoration: underline;
 }
+
+/* App Sticky Footer */
+.app-footer {
+    background: #0f172a;
+    color: #94a3b8;
+    padding: 16px 32px;
+    font-size: 13px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.footer-logo {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer-brand {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.footer-copy {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #10b981;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.dot.pulse {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulseAnimation 1.6s infinite;
+}
+
+@keyframes pulseAnimation {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.footer-divider { color: #334155; }
+.footer-link { color: #94a3b8; text-decoration: none; transition: color 0.2s; }
+.footer-link:hover { color: #38bdf8; }
