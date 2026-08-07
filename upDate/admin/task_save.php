@@ -34,7 +34,7 @@ if ($id > 0) {
   $ticket_id = "TK-" . date('Y') . "-" . rand(10000, 99999);
 
   $stmt = $conn->prepare("INSERT INTO tasks (ticket_id, user_id, assigned_to, created_by, title, description, priority, status, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())");
-  $stmt->bind_param("siiisssss", $ticket_id, $user_id, $user_id, $admin_id, $title, $desc, $priority, $due_date);
+  $stmt->bind_param("siiissss", $ticket_id, $user_id, $user_id, $admin_id, $title, $desc, $priority, $due_date);
   $stmt->execute();
   $stmt->close();
 
