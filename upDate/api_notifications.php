@@ -16,7 +16,7 @@ $uid    = (int)$_SESSION['uid'];
 $role   = $_SESSION['role'] ?? 'user';
 $action = $_POST['action'] ?? $_GET['action'] ?? 'fetch';
 
-// Ensure notifications table exists
+// Ensure notifications table and is_read column exist
 $conn->query("
 CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 ");
+$conn->query("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read TINYINT(1) DEFAULT 0");
 
 if ($action === 'fetch') {
     $whereClause = ($role === 'admin') ? "(user_id = $uid OR user_id = 1 OR user_id = 0)" : "(user_id = $uid OR user_id = 0)";
@@ -35,7 +36,8 @@ if ($action === 'fetch') {
 
     if ($res) {
         while ($row = $res->fetch_assoc()) {
-            if ($row['is_read'] == 0) $unreadCnt++;
+            $isRead = isset($row['is_read']) ? (int)$row['is_read'] : 1;
+            if ($isRead == 0) $unreadCnt++;
 
             // Compute smart target URL based on notification message and user role
             $msg = $row['message'];
@@ -54,7 +56,7 @@ if ($action === 'fetch') {
             $list[] = [
                 'id' => $row['id'],
                 'message' => htmlspecialchars($row['message']),
-                'is_read' => (int)$row['is_read'],
+                'is_read' => $isRead,
                 'url' => $url,
                 'time' => date('d M, h:i A', strtotime($row['created_at']))
             ];
