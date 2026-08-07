@@ -29,6 +29,7 @@ if (!$task) {
 
 $ticketId = $task['ticket_id'] ?: ("TK-" . date('Y') . "-" . str_pad($task['id'], 5, '0', STR_PAD_LEFT));
 $priority = $task['priority'] ?: 'Normal';
+$backUrl  = ($_SESSION['role'] === 'admin') ? 'admin/tasks.php' : 'user/tasks.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -96,7 +97,9 @@ $priority = $task['priority'] ?: 'Normal';
 <body>
 
 <div class="no-print" style="max-width: 720px; margin: 0 auto 20px; display:flex; justify-content:space-between; align-items:center;">
-    <a href="javascript:history.back()" style="text-decoration:none; font-weight:600; color:#3b82f6;">← Back to Tasks</a>
+    <a href="<?php echo $backUrl; ?>" style="text-decoration:none; font-weight:700; color:#3b82f6; font-size:14.5px; display:flex; align-items:center; gap:6px;">
+        <i class="bi bi-arrow-left-circle-fill" style="font-size:18px;"></i> ← Back to Tasks Board
+    </a>
     <button onclick="window.print()" style="padding:10px 20px; background:#10b981; color:#fff; border:none; border-radius:12px; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:8px;">
         <i class="bi bi-printer-fill"></i> Print / Save PDF Ticket
     </button>
