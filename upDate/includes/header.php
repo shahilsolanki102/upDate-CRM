@@ -359,10 +359,14 @@ let globalIsShiftHours = false;
 
 function fetchNotifications() {
   fetch(basePath + "api_notifications.php?action=fetch")
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
+      let data = {};
+      try { data = JSON.parse(text); } catch(e) { data = {}; }
+      
       const badge = document.getElementById("notifBadge");
       const listContent = document.getElementById("notifListContent");
+      if (!badge || !listContent) return;
 
       if (data.unread > 0) {
         badge.innerText = data.unread;
@@ -385,7 +389,8 @@ function fetchNotifications() {
       } else {
         listContent.innerHTML = '<div style="padding:20px; text-align:center; color:#777; font-size:13px;">No notifications</div>';
       }
-    });
+    })
+    .catch(() => {});
 }
 
 function markAllNotificationsRead() {
@@ -396,19 +401,23 @@ function markAllNotificationsRead() {
     method: 'POST',
     body: formData
   })
-  .then(r => r.json())
-  .then(res => {
-    fetchNotifications();
-  });
+  .then(r => r.text())
+  .then(() => fetchNotifications())
+  .catch(() => {});
 }
 
 function checkShiftStatus() {
   fetch(basePath + "api_attendance.php?action=status")
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
+      let data = {};
+      try { data = JSON.parse(text); } catch(e) { data = {}; }
+
       const title = document.getElementById("shiftStatusTitle");
       const sub = document.getElementById("shiftStatusSub");
       const btns = document.getElementById("shiftActionBtns");
+      if (!title || !sub || !btns) return;
+
       globalIsShiftHours = data.isShiftHours;
 
       if (data.punchedIn) {
@@ -441,7 +450,8 @@ function checkShiftStatus() {
           </button>
         `;
       }
-    });
+    })
+    .catch(() => {});
 }
 
 function handlePunchOut() {
@@ -469,15 +479,19 @@ function punchShift(action, mode, reason = '') {
     method: 'POST',
     body: formData
   })
-  .then(r => r.json())
-  .then(res => {
+  .then(r => r.text())
+  .then(text => {
+    let res = {};
+    try { res = JSON.parse(text); } catch(e) { res = {}; }
+
     if (res.success) {
       alert(res.message || "Shift status updated!");
       checkShiftStatus();
     } else {
       alert(res.error || "Shift error");
     }
-  });
+  })
+  .catch(() => {});
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -521,8 +535,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
       searchTimer = setTimeout(() => {
         fetch(basePath + "api_search.php?q=" + encodeURIComponent(query))
-          .then(res => res.json())
-          .then(data => {
+          .then(res => res.text())
+          .then(text => {
+            let data = [];
+            try { data = JSON.parse(text); } catch(e) { data = []; }
+
             if (!data || data.length === 0) {
               dropdown.innerHTML = '<div style="padding:12px; text-align:center; color:#777; font-size:13px;">No matching results found</div>';
             } else {

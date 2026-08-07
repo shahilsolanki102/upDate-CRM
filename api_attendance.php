@@ -1,9 +1,13 @@
 <?php
+ob_start();
+error_reporting(0);
+ini_set('display_errors', 0);
+
 require_once "config.php";
 
-header('Content-Type: application/json');
-
 if (!isset($_SESSION['uid'])) {
+    ob_clean();
+    header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'Not logged in']);
     exit;
 }
@@ -44,6 +48,8 @@ $isShiftHours = ($currentHour >= 9 && $currentHour < 17); // True strictly betwe
 // 1. Get Current Status
 if ($action === 'status') {
     $res = $conn->query("SELECT * FROM attendance_logs WHERE user_id=$uid AND status IN ('active', 'pending_approval') ORDER BY id DESC LIMIT 1");
+    ob_clean();
+    header('Content-Type: application/json');
     if ($res && $res->num_rows > 0) {
         $activeLog = $res->fetch_assoc();
         echo json_encode([
@@ -80,6 +86,8 @@ if ($action === 'punch_in') {
     $logMsg = "Started work shift ($mode mode)";
     $conn->query("INSERT INTO activity_log (user_id, action, created_at) VALUES ($uid, '$logMsg', NOW())");
 
+    ob_clean();
+    header('Content-Type: application/json');
     echo json_encode(['success' => true, 'message' => 'Punched In successfully!']);
     exit;
 }
@@ -88,6 +96,8 @@ if ($action === 'punch_in') {
 if ($action === 'punch_out') {
     $res = $conn->query("SELECT * FROM attendance_logs WHERE user_id=$uid AND status IN ('active', 'pending_approval') ORDER BY id DESC LIMIT 1");
     if (!$res || $res->num_rows === 0) {
+        ob_clean();
+        header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => 'No active work shift found']);
         exit;
     }
@@ -99,6 +109,8 @@ if ($action === 'punch_out') {
     if ($isShiftHours && $log['status'] !== 'pending_approval') {
         $reason = trim($_POST['reason'] ?? '');
         if (empty($reason)) {
+            ob_clean();
+            header('Content-Type: application/json');
             echo json_encode([
                 'success'          => false,
                 'requiresReason'   => true,
@@ -117,6 +129,8 @@ if ($action === 'punch_out') {
         $conn->query("INSERT INTO notifications (user_id, message) VALUES (1, '⚠️ Early Punch-Out Request from $uname: Reason: $reason')");
         $conn->query("INSERT INTO activity_log (user_id, action, created_at) VALUES ($uid, 'Requested early Punch-Out from Admin (Reason: $reason)', NOW())");
 
+        ob_clean();
+        header('Content-Type: application/json');
         echo json_encode([
             'success'          => true,
             'pendingApproval' => true,
@@ -126,6 +140,8 @@ if ($action === 'punch_out') {
     }
 
     if ($log['status'] === 'pending_approval') {
+        ob_clean();
+        header('Content-Type: application/json');
         echo json_encode([
             'success'          => false,
             'pendingApproval' => true,
@@ -149,6 +165,8 @@ if ($action === 'punch_out') {
     $logMsg = "Ended work shift (Worked: $hoursStr)";
     $conn->query("INSERT INTO activity_log (user_id, action, created_at) VALUES ($uid, '$logMsg', NOW())");
 
+    ob_clean();
+    header('Content-Type: application/json');
     echo json_encode(['success' => true, 'message' => "Punched Out successfully! Total work duration: $hoursStr"]);
     exit;
 }
@@ -156,6 +174,8 @@ if ($action === 'punch_out') {
 // 4. Admin Approve Early Punch-Out
 if ($action === 'admin_approve') {
     if (($_SESSION['role'] ?? '') !== 'admin') {
+        ob_clean();
+        header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => 'Admin access required']);
         exit;
     }
@@ -178,11 +198,17 @@ if ($action === 'admin_approve') {
         $conn->query("INSERT INTO notifications (user_id, message) VALUES ($targetUid, '✓ Admin Approved your Early Punch-Out request.')");
         $conn->query("INSERT INTO activity_log (user_id, action, created_at) VALUES (1, 'Approved early punch-out for user ID $targetUid', NOW())");
 
+        ob_clean();
+        header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'Early Punch-Out request approved!']);
     } else {
+        ob_clean();
+        header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => 'Log not found']);
     }
     exit;
 }
 
+ob_clean();
+header('Content-Type: application/json');
 echo json_encode(['success' => false, 'error' => 'Invalid action']);
