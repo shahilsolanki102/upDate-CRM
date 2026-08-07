@@ -1,0 +1,1 @@
+<?php include __DIR__+'/../includes/header.php'; ?><div class='card'><h3>Contact Admin</h3><p>Placeholder.</p></div><?php include __DIR__+'/../includes/footer.php'; ?>

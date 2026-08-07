@@ -1,0 +1,1 @@
+<?php echo "<!doctype html><html><head><link rel='stylesheet' href='assets/css/style.css'></head><body class='loginWrap'><div class='loginBox'><h3>Forgot Password</h3><p>Ask admin to reset your password.</p><a class='link' href='user_login.php'>Back</a></div></body></html>"; ?>

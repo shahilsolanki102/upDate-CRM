@@ -1,0 +1,23 @@
+*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+body{margin:0;background:#f5f6fb;color:#0f172a}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;background:linear-gradient(#103a74,#0f2f5d);color:#fff;padding:16px 12px;position:sticky;top:0;height:100vh}
+.logoBox{display:flex;gap:10px;align-items:center;margin-bottom:18px}
+.miniLogo{width:40px;height:40px;border-radius:10px;background:#fff;padding:6px}
+.brand-main{font-weight:700}.brand-sub{opacity:.8;font-size:12px}
+.sideLinks .link{display:block;color:#e6f0ff;text-decoration:none;padding:10px 12px;border-radius:10px;margin:6px 0}
+.sideLinks .link:hover{background:rgba(255,255,255,.12)}.sideLinks .danger{background:#ef4444;color:#fff}
+.content{flex:1;padding:16px 24px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.badge{font-size:12px;background:#e5edff;border:1px solid #c6d4ff;color:#3b5bdb;padding:2px 6px;border-radius:6px;margin-left:8px}
+.actions{display:flex;gap:10px;align-items:center}.search{padding:8px 10px;border:1px solid #e2e8f0;border-radius:999px;min-width:320px}
+.icon,.btn{border:1px solid #e2e8f0;border-radius:12px;padding:8px 12px;text-decoration:none;background:#fff}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card h3{margin:0 0 6px 0;font-size:14px;color:#475569}.metric{font-size:28px;font-weight:700}
+.loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
+.loginBox{width:380px;background:rgba(255,255,255,.92);border:1px solid #eee;padding:26px;border-radius:16px;box-shadow:0 10px 50px rgba(0,0,0,.08);text-align:center}
+.title{font-weight:800;margin-bottom:4px}.subtitle{font-size:12px;color:#64748b;margin-bottom:14px}
+.input{width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:12px;margin:8px 0}
+.primary{width:100%;padding:10px;border:none;border-radius:12px;background:#ef4444;color:#fff;font-weight:700;cursor:pointer}
+.row{display:flex;justify-content:space-between;margin-top:8px}.link{color:#0ea5e9;text-decoration:none}
+.centerLogo{width:50px;height:50px;border-radius:12px;background:#fff;margin:0 auto 8px auto;display:block}.smallCenter{font-weight:700}
