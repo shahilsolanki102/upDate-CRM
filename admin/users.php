@@ -1,5 +1,6 @@
 <?php 
 require_once "../config.php";
+$requireLogin = 'admin';
 include __DIR__."/../includes/header.php";
 
 $msg = '';
@@ -58,25 +59,27 @@ $res = $conn->query("SELECT * FROM users ORDER BY id DESC");
         </div>
         <div>
             <label style="font-size:12px; font-weight:600; color:var(--text-muted);">Phone Number</label>
-            <input class="input" name="phone" placeholder="+919876543210">
+            <input class="input" name="phone" placeholder="+91 9876543210">
         </div>
         <div>
             <label style="font-size:12px; font-weight:600; color:var(--text-muted);">Department</label>
-            <input class="input" name="department" placeholder="e.g. Sales, IT, HR">
+            <input class="input" name="department" placeholder="Technology">
         </div>
         <div>
-            <label style="font-size:12px; font-weight:600; color:var(--text-muted);">Role</label>
+            <label style="font-size:12px; font-weight:600; color:var(--text-muted);">Designation</label>
+            <input class="input" name="designation" placeholder="Software Engineer">
+        </div>
+        <div>
+            <label style="font-size:12px; font-weight:600; color:var(--text-muted);">System Role</label>
             <select name="role" class="input">
-                <option value="user">User / Employee</option>
-                <option value="admin">Administrator</option>
+                <option value="user">Employee / Staff</option>
+                <option value="admin">System Admin</option>
             </select>
         </div>
-        <div>
-            <label style="font-size:12px; font-weight:600; color:var(--text-muted);">Password</label>
-            <input class="input" type="password" name="password" placeholder="••••••••" required>
-        </div>
-        <div style="grid-column: 1 / -1; margin-top:8px;">
-            <button class="btn" name="create" type="submit" style="padding:12px 24px;">➕ Create Employee Account</button>
+        <div style="grid-column: 1 / -1; margin-top:6px;">
+            <button type="submit" name="create" class="btn" style="padding:10px 22px;">
+                <span>➕ Create User Account</span>
+            </button>
         </div>
     </form>
 </div>
@@ -102,9 +105,13 @@ $res = $conn->query("SELECT * FROM users ORDER BY id DESC");
         <?php if ($res && $res->num_rows > 0): while($r = $res->fetch_assoc()): ?>
             <tr>
                 <td style="display:flex; align-items:center; gap:12px;">
-                    <div class="avatar-sm" style="width:38px; height:38px; font-size:15px; background:<?php echo $r['role']==='admin'?'var(--brand-gradient)':'linear-gradient(135deg, #10b981, #059669)'; ?>;">
-                        <?php echo strtoupper(substr($r['name'], 0, 1)); ?>
-                    </div>
+                    <?php if (!empty($r['profile_pic']) && file_exists(__DIR__ . '/../uploads/profiles/' . $r['profile_pic'])): ?>
+                        <img src="../uploads/profiles/<?php echo urlencode($r['profile_pic']); ?>" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid var(--accent-blue);" alt="Avatar">
+                    <?php else: ?>
+                        <div class="avatar-sm" style="width:38px; height:38px; font-size:15px; background:<?php echo $r['role']==='admin'?'var(--brand-gradient)':'linear-gradient(135deg, #10b981, #059669)'; ?>;">
+                            <?php echo strtoupper(substr($r['name'], 0, 1)); ?>
+                        </div>
+                    <?php endif; ?>
                     <div>
                         <div style="font-weight:700; color:var(--text-dark);"><?php echo htmlspecialchars($r['name']); ?></div>
                         <div style="font-size:12px; color:var(--text-muted);"><?php echo htmlspecialchars($r['email']); ?></div>

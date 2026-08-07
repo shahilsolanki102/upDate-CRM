@@ -5,7 +5,7 @@ include __DIR__."/../includes/header.php";
 
 // Fetch pending early exit requests for Admin approval
 $pendingRequests = $conn->query("
-    SELECT a.*, u.name, u.email, u.phone
+    SELECT a.*, u.name, u.email, u.phone, u.profile_pic
     FROM attendance_logs a
     JOIN users u ON a.user_id = u.id
     WHERE a.status = 'pending_approval'
@@ -14,7 +14,7 @@ $pendingRequests = $conn->query("
 
 // Fetch today's work shifts and active online status
 $shifts = $conn->query("
-    SELECT a.*, u.name, u.email, u.department, u.role
+    SELECT a.*, u.name, u.email, u.department, u.role, u.profile_pic
     FROM attendance_logs a
     JOIN users u ON a.user_id = u.id
     ORDER BY a.clock_in DESC
@@ -72,9 +72,18 @@ $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
         <tbody>
         <?php while($pr = $pendingRequests->fetch_assoc()): ?>
             <tr>
-                <td style="font-weight:700; color:#111827;">
-                    <?php echo htmlspecialchars($pr['name']); ?>
-                    <div style="font-size:12px; font-weight:400; color:#6b7280;"><?php echo htmlspecialchars($pr['email']); ?></div>
+                <td style="display:flex; align-items:center; gap:10px;">
+                    <?php if (!empty($pr['profile_pic']) && file_exists(__DIR__ . '/../uploads/profiles/' . $pr['profile_pic'])): ?>
+                        <img src="../uploads/profiles/<?php echo urlencode($pr['profile_pic']); ?>" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid #ef4444;" alt="Avatar">
+                    <?php else: ?>
+                        <div class="avatar-sm" style="width:34px; height:34px; font-size:14px; background:#ef4444;">
+                            <?php echo strtoupper(substr($pr['name'], 0, 1)); ?>
+                        </div>
+                    <?php endif; ?>
+                    <div>
+                        <div style="font-weight:700; color:#111827;"><?php echo htmlspecialchars($pr['name']); ?></div>
+                        <div style="font-size:12px; font-weight:400; color:#6b7280;"><?php echo htmlspecialchars($pr['email']); ?></div>
+                    </div>
                 </td>
                 <td style="font-weight:600; color:#374151;"><?php echo date('h:i A', strtotime($pr['clock_in'])); ?></td>
                 <td>
@@ -127,9 +136,13 @@ $onlineCount = $onlineRes ? ($onlineRes->fetch_assoc()['c'] ?? 0) : 0;
             <tr>
                 <td><?php echo $i++; ?></td>
                 <td style="display:flex; align-items:center; gap:10px;">
-                    <div class="avatar-sm" style="width:34px; height:34px; font-size:14px; background:<?php echo $isActive?'#10b981':'#1e3c72'; ?>;">
-                        <?php echo strtoupper(substr($s['name'], 0, 1)); ?>
-                    </div>
+                    <?php if (!empty($s['profile_pic']) && file_exists(__DIR__ . '/../uploads/profiles/' . $s['profile_pic'])): ?>
+                        <img src="../uploads/profiles/<?php echo urlencode($s['profile_pic']); ?>" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid <?php echo $isActive?'#10b981':'#1e3c72'; ?>;" alt="Avatar">
+                    <?php else: ?>
+                        <div class="avatar-sm" style="width:34px; height:34px; font-size:14px; background:<?php echo $isActive?'#10b981':'#1e3c72'; ?>;">
+                            <?php echo strtoupper(substr($s['name'], 0, 1)); ?>
+                        </div>
+                    <?php endif; ?>
                     <div>
                         <div style="font-weight:700; color:var(--text-dark);"><?php echo htmlspecialchars($s['name']); ?></div>
                         <div style="font-size:11.5px; color:var(--text-muted);"><?php echo htmlspecialchars($s['email']); ?></div>
