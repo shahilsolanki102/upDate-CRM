@@ -23,8 +23,8 @@ $conn->query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS ticket_id VARCHAR(50) N
 $conn->query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'Normal'");
 
 if ($id > 0) {
-  $stmt = $conn->prepare("UPDATE tasks SET user_id=?, title=?, description=?, priority=?, due_date=? WHERE id=?");
-  $stmt->bind_param("issssi", $user_id, $title, $desc, $priority, $due_date, $id);
+  $stmt = $conn->prepare("UPDATE tasks SET user_id=?, assigned_to=?, title=?, description=?, priority=?, due_date=? WHERE id=?");
+  $stmt->bind_param("iissssi", $user_id, $user_id, $title, $desc, $priority, $due_date, $id);
   $stmt->execute();
   $stmt->close();
   
@@ -33,8 +33,8 @@ if ($id > 0) {
   // Generate Unique Ticket ID (Format: TK-YYYY-XXXXX)
   $ticket_id = "TK-" . date('Y') . "-" . rand(10000, 99999);
 
-  $stmt = $conn->prepare("INSERT INTO tasks (ticket_id, user_id, created_by, title, description, priority, status, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, NOW())");
-  $stmt->bind_param("siissss", $ticket_id, $user_id, $admin_id, $title, $desc, $priority, $due_date);
+  $stmt = $conn->prepare("INSERT INTO tasks (ticket_id, user_id, assigned_to, created_by, title, description, priority, status, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())");
+  $stmt->bind_param("siiisssss", $ticket_id, $user_id, $user_id, $admin_id, $title, $desc, $priority, $due_date);
   $stmt->execute();
   $stmt->close();
 
