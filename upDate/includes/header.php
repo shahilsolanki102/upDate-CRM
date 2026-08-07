@@ -1,0 +1,591 @@
+<?php
+require_once __DIR__ . "/../config.php";
+
+// Redirect if not logged in
+if (!isset($_SESSION['role'])) { 
+    header("Location: ../user_login.php"); 
+    exit; 
+}
+
+$role     = $_SESSION['role']; 
+$name     = $_SESSION['name'] ?? ($role === 'admin' ? 'Admin' : 'User');
+$isAdmin  = ($role === 'admin');
+
+// Ensure profile_pic column exists in users table
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_pic VARCHAR(255) NULL");
+
+// Fetch user profile picture for avatar display in header topbar
+$user_pic = '';
+if (isset($_SESSION['uid'])) {
+    $uid_hdr = (int)$_SESSION['uid'];
+    $uRes = $conn->query("SELECT profile_pic FROM users WHERE id=$uid_hdr");
+    if ($uRes && $uRow = $uRes->fetch_assoc()) {
+        $user_pic = $uRow['profile_pic'] ?? '';
+    }
+}
+
+// 🔐 Role-based restriction
+$current_path = $_SERVER['PHP_SELF'];
+
+if (!$isAdmin && strpos($current_path, '/admin/') !== false) {
+    header("Location: ../user/dashboard.php");
+    exit;
+}
+
+if ($isAdmin && strpos($current_path, '/user/') !== false) {
+    header("Location: ../admin/dashboard.php");
+    exit;
+}
+
+// Calculate relative base path dynamically
+$depth = (strpos($current_path, '/admin/') !== false || strpos($current_path, '/user/') !== false) ? '../' : './';
+
+// Helper function to mark active sidebar links
+function isActive($pageName) {
+    global $current_path;
+    return (strpos($current_path, $pageName) !== false) ? ' active' : '';
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>upDate CRM — uD Modern Management Portal</title>
+<!-- uD Transparent Favicon Icon -->
+<link rel="icon" type="image/svg+xml" href="<?php echo $depth; ?>assets/images/logo.svg">
+<link rel="alternate icon" type="image/png" href="<?php echo $depth; ?>assets/images/logo.png">
+<!-- Google Fonts & Bootstrap Icons -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="<?php echo $depth; ?>assets/css/style.css">
+<style>
+  .search-wrapper { position: relative; }
+  .search-results-dropdown {
+    position: absolute;
+    top: 48px;
+    left: 0;
+    width: 320px;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.15);
+    z-index: 999;
+    max-height: 380px;
+    overflow-y: auto;
+    display: none;
+    padding: 8px 0;
+  }
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: background 0.15s;
+  }
+  .search-result-item:hover {
+    background: #f1f5f9;
+  }
+  .search-result-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Notifications Dropdown */
+  .notif-wrapper { position: relative; display: inline-block; }
+  .notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 2px solid #ffffff;
+    display: none;
+  }
+  .notif-dropdown-panel {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    width: 340px;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+    z-index: 9999;
+    display: none;
+    overflow: hidden;
+  }
+  .notif-header {
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .notif-item:hover {
+    background: #f8fafc;
+  }
+  .notif-item.unread {
+    background: #eff6ff;
+    font-weight: 600;
+  }
+
+  /* Shift Tracker Banner */
+  .shift-banner {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 10px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="logoBox">
+    <img src="<?php echo $depth; ?>assets/images/logo.svg" class="miniLogo" alt="uD Brand Logo"/>
+    <div class="brand">
+      <div class="brand-main">upDate CRM</div>
+      <div class="brand-sub">upDt Technology Pvt. Ltd.</div>
+    </div>
+  </div>
+
+  <nav class="sideLinks">
+    <a href="<?php echo ($isAdmin ? $depth.'admin/dashboard.php' : $depth.'user/dashboard.php');?>" class="link<?php echo isActive('dashboard.php'); ?>">
+      <i class="bi bi-grid-1x2-fill icon-side"></i>
+      <span>Dashboard</span>
+    </a>
+
+    <?php if($isAdmin): ?>
+      <a href="<?php echo $depth; ?>admin/attendance.php" class="link<?php echo isActive('attendance.php'); ?>">
+        <i class="bi bi-stopwatch-fill icon-side" style="color:#10b981;"></i>
+        <span>Work Shift & Remote Log</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/users.php" class="link<?php echo isActive('users.php'); ?>">
+        <i class="bi bi-people-fill icon-side"></i>
+        <span>Users / Employees</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/tasks.php" class="link<?php echo isActive('tasks.php'); ?>">
+        <i class="bi bi-check2-square icon-side"></i>
+        <span>Task Management</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/notes.php" class="link<?php echo isActive('notes.php'); ?>">
+        <i class="bi bi-journal-bookmark-fill icon-side"></i>
+        <span>Notes & Reminders</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/announcements.php" class="link<?php echo isActive('announcements.php'); ?>">
+        <i class="bi bi-megaphone-fill icon-side"></i>
+        <span>Announcements</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/calendar.php" class="link<?php echo isActive('calendar.php'); ?>">
+        <i class="bi bi-calendar3 icon-side"></i>
+        <span>Calendar & Schedule</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/performance.php" class="link<?php echo isActive('performance.php'); ?>">
+        <i class="bi bi-bar-chart-line-fill icon-side"></i>
+        <span>Performance & Analytics</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/activity_log.php" class="link<?php echo isActive('activity_log.php'); ?>">
+        <i class="bi bi-clock-history icon-side"></i>
+        <span>Activity Log</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/knowledge.php" class="link<?php echo isActive('knowledge.php'); ?>">
+        <i class="bi bi-book-half icon-side"></i>
+        <span>Knowledge Base</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/whatsapp.php" class="link<?php echo isActive('whatsapp.php'); ?>">
+        <i class="bi bi-whatsapp icon-side" style="color: #25d366;"></i>
+        <span>WhatsApp Portal</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/gmail.php" class="link<?php echo isActive('gmail.php'); ?>">
+        <i class="bi bi-envelope-at-fill icon-side" style="color: #ea4335;"></i>
+        <span>Email Dispatcher</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/settings.php" class="link<?php echo isActive('settings.php'); ?>">
+        <i class="bi bi-gear-wide-connected icon-side"></i>
+        <span>System Settings</span>
+      </a>
+    <?php else: ?>
+      <a href="<?php echo $depth; ?>user/tasks.php" class="link<?php echo isActive('tasks.php'); ?>">
+        <i class="bi bi-check2-square icon-side"></i>
+        <span>My Tasks</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/notes.php" class="link<?php echo isActive('notes.php'); ?>">
+        <i class="bi bi-journal-bookmark-fill icon-side"></i>
+        <span>Personal Notes</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/announcements.php" class="link<?php echo isActive('announcements.php'); ?>">
+        <i class="bi bi-megaphone-fill icon-side"></i>
+        <span>Announcements</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/calendar.php" class="link<?php echo isActive('calendar.php'); ?>">
+        <i class="bi bi-calendar3 icon-side"></i>
+        <span>My Calendar</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/performance.php" class="link<?php echo isActive('performance.php'); ?>">
+        <i class="bi bi-bar-chart-line-fill icon-side"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/activity_log.php" class="link<?php echo isActive('activity_log.php'); ?>">
+        <i class="bi bi-clock-history icon-side"></i>
+        <span>Activity Log</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/knowledge.php" class="link<?php echo isActive('knowledge.php'); ?>">
+        <i class="bi bi-book-half icon-side"></i>
+        <span>Knowledge Base</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/profile.php" class="link<?php echo isActive('profile.php'); ?>">
+        <i class="bi bi-person-circle icon-side"></i>
+        <span>My Profile</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/contact_admin.php" class="link<?php echo isActive('contact_admin.php'); ?>">
+        <i class="bi bi-chat-left-dots-fill icon-side" style="color: #60a5fa;"></i>
+        <span>Contact Admin</span>
+      </a>
+    <?php endif; ?>
+
+    <a href="<?php echo $depth; ?>logout.php" class="link danger">
+      <i class="bi bi-box-arrow-right icon-side"></i>
+      <span>Logout</span>
+    </a>
+  </nav>
+</aside>
+
+<main class="content">
+  <div class="topbar">
+    <div class="welcome">
+      <?php if (!empty($user_pic) && file_exists(__DIR__ . '/../uploads/profiles/' . $user_pic)): ?>
+        <img src="<?php echo $depth; ?>uploads/profiles/<?php echo urlencode($user_pic); ?>" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid var(--accent-blue); box-shadow:0 4px 10px rgba(0,0,0,0.15);" alt="Avatar">
+      <?php else: ?>
+        <div class="avatar-sm">
+          <?php echo strtoupper(substr($name, 0, 1)); ?>
+        </div>
+      <?php endif; ?>
+
+      <div>
+        <div style="font-size: 15px; font-weight: 700; color: var(--text-dark);">
+          Welcome back, <?php echo htmlspecialchars($name); ?> 👋
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 400;">
+          Role: <strong style="text-transform: capitalize; color: var(--brand-primary);"><?php echo $role; ?></strong>
+        </div>
+      </div>
+      <span class="badge">v1.0 Pro</span>
+    </div>
+
+    <div class="actions">
+      <div class="search-wrapper">
+        <i class="bi bi-search search-icon"></i>
+        <input class="search" id="liveSearchInput" placeholder="Search tasks, notes, users..." autocomplete="off"/>
+        <div class="search-results-dropdown" id="searchResultsDropdown"></div>
+      </div>
+
+      <!-- Real-Time Notification Bell Dropdown -->
+      <div class="notif-wrapper">
+        <a class="icon" href="javascript:void(0)" id="notifBellBtn" title="Notifications">
+          <i class="bi bi-bell-fill" style="color: #f59e0b;"></i>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </a>
+
+        <div class="notif-dropdown-panel" id="notifDropdownPanel">
+          <div class="notif-header">
+            <span style="font-weight:700; font-size:14px; color:var(--text-dark);">🔔 Notifications</span>
+            <button onclick="markAllNotificationsRead()" style="background:none; border:none; color:var(--accent-blue); font-size:12px; font-weight:700; cursor:pointer;">
+              Mark all as read
+            </button>
+          </div>
+          <div id="notifListContent" style="max-height:300px; overflow-y:auto;">
+            <div style="padding:20px; text-align:center; color:#777; font-size:13px;">Loading notifications...</div>
+          </div>
+        </div>
+      </div>
+
+      <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/whatsapp.php' : $depth.'user/contact_admin.php');?>" title="WhatsApp Messaging"><i class="bi bi-whatsapp" style="color: #25d366;"></i></a>
+      <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/gmail.php' : $depth.'user/contact_admin.php');?>" title="Email Dispatcher"><i class="bi bi-envelope-at-fill" style="color: #ea4335;"></i></a>
+      <a class="btn danger-btn" href="<?php echo $depth; ?>logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </div>
+  </div>
+
+  <!-- Real-Time Work Shift Clock-In Tracker Bar -->
+  <div class="shift-banner" id="shiftBanner">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <i class="bi bi-stopwatch" style="font-size:22px; color:var(--brand-primary);"></i>
+      <div>
+        <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);" id="shiftStatusTitle">Work Shift Tracker</div>
+        <div style="font-size:12px; color:var(--text-muted);" id="shiftStatusSub">Shift Hours: 9:00 AM to 5:00 PM (Direct Punch-out available anytime after 5:00 PM).</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;" id="shiftActionBtns">
+      <button class="btn" onclick="punchShift('punch_in', 'remote')" style="background:#10b981; border:none; font-size:12.5px; padding:8px 14px;">
+        <i class="bi bi-house-door-fill"></i> 🏠 Punch In (Remote Work)
+      </button>
+      <button class="btn" onclick="punchShift('punch_in', 'office')" style="background:#2563eb; border:none; font-size:12.5px; padding:8px 14px;">
+        <i class="bi bi-building-fill"></i> 🏢 Punch In (Office Work)
+      </button>
+    </div>
+  </div>
+
+  <div class="page">
+
+<script>
+const basePath = "<?php echo $depth; ?>";
+let globalIsShiftHours = false;
+
+function fetchNotifications() {
+  fetch(basePath + "api_notifications.php?action=fetch")
+    .then(r => r.text())
+    .then(text => {
+      let data = {};
+      try { data = JSON.parse(text); } catch(e) { data = {}; }
+      
+      const badge = document.getElementById("notifBadge");
+      const listContent = document.getElementById("notifListContent");
+      if (!badge || !listContent) return;
+
+      if (data.unread && data.unread > 0) {
+        badge.innerText = data.unread;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+        badge.innerText = "0";
+      }
+
+      if (data.notifications && data.notifications.length > 0) {
+        let html = '';
+        data.notifications.forEach(n => {
+          html += `
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="location.href='${basePath}${n.url}'">
+              <div>${n.message}</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${n.time}</div>
+            </div>
+          `;
+        });
+        listContent.innerHTML = html;
+      } else {
+        listContent.innerHTML = '<div style="padding:20px; text-align:center; color:#777; font-size:13px;">No notifications</div>';
+      }
+    })
+    .catch(() => {});
+}
+
+function markAllNotificationsRead() {
+  const badge = document.getElementById("notifBadge");
+  if (badge) {
+    badge.style.display = "none";
+    badge.innerText = "0";
+  }
+
+  document.querySelectorAll('.notif-item').forEach(el => el.classList.remove('unread'));
+
+  const formData = new FormData();
+  formData.append('action', 'mark_read');
+
+  fetch(basePath + "api_notifications.php", {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.text())
+  .then(() => fetchNotifications())
+  .catch(() => {});
+}
+
+function checkShiftStatus() {
+  fetch(basePath + "api_attendance.php?action=status")
+    .then(r => r.text())
+    .then(text => {
+      let data = {};
+      try { data = JSON.parse(text); } catch(e) { data = {}; }
+
+      const title = document.getElementById("shiftStatusTitle");
+      const sub = document.getElementById("shiftStatusSub");
+      const btns = document.getElementById("shiftActionBtns");
+      if (!title || !sub || !btns) return;
+
+      globalIsShiftHours = data.isShiftHours;
+
+      if (data.punchedIn) {
+        if (data.pendingApproval) {
+          title.innerHTML = `<span style="color:#ef4444;">⚠️ Early Punch-Out Approval Pending</span> (${data.mode} Mode)`;
+          sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. Early exit request sent to Admin.`;
+          btns.innerHTML = `
+            <span class="badge" style="background:#fee2e2; color:#991b1b; padding:8px 14px; font-size:12.5px;">
+              <i class="bi bi-clock-history"></i> Waiting for Admin Approval...
+            </span>
+          `;
+        } else {
+          title.innerHTML = `<span style="color:#10b981;">🟢 Active Work Shift</span> (${data.mode} Mode)`;
+          sub.innerHTML = `Punched in at <strong>${data.clockIn}</strong>. ${globalIsShiftHours ? '(Note: 9 AM - 5 PM exit requires Admin Approval)' : '(After 5 PM: Direct Punch-Out Available)'}`;
+          btns.innerHTML = `
+            <button class="btn danger-btn" onclick="handlePunchOut()" style="font-size:12.5px; padding:8px 16px;">
+              <i class="bi bi-stop-circle-fill"></i> 🔴 Punch Out / End Shift
+            </button>
+          `;
+        }
+      } else {
+        title.innerHTML = "Work Shift Tracker";
+        sub.innerHTML = "Shift Hours: 9:00 AM to 5:00 PM (Auto 11:59 PM Midnight Punch-out enabled).";
+        btns.innerHTML = `
+          <button class="btn" onclick="punchShift('punch_in', 'remote')" style="background:#10b981; border:none; font-size:12.5px; padding:8px 14px;">
+            <i class="bi bi-house-door-fill"></i> 🏠 Punch In (Remote Work)
+          </button>
+          <button class="btn" onclick="punchShift('punch_in', 'office')" style="background:#2563eb; border:none; font-size:12.5px; padding:8px 14px;">
+            <i class="bi bi-building-fill"></i> 🏢 Punch In (Office Work)
+          </button>
+        `;
+      }
+    })
+    .catch(() => {});
+}
+
+function handlePunchOut() {
+  if (globalIsShiftHours) {
+    const reason = prompt("⚠️ Official Shift Hours (9:00 AM to 5:00 PM).\nEmergency Punch-Out requires Admin approval.\n\nPlease enter your emergency reason for Admin review:");
+    if (reason === null) return;
+    if (reason.trim() === '') {
+      alert("Emergency reason is required to submit Punch-Out request to Admin!");
+      return;
+    }
+    punchShift('punch_out', '', reason.trim());
+  } else {
+    // After 5:00 PM -> DIRECT INSTANT PUNCH OUT WITHOUT ANY PROMPT
+    punchShift('punch_out', '', '');
+  }
+}
+
+function punchShift(action, mode, reason = '') {
+  const formData = new FormData();
+  formData.append('action', action);
+  formData.append('mode', mode);
+  if (reason) formData.append('reason', reason);
+
+  fetch(basePath + "api_attendance.php", {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.text())
+  .then(text => {
+    let res = {};
+    try { res = JSON.parse(text); } catch(e) { res = {}; }
+
+    if (res.success) {
+      alert(res.message || "Shift status updated!");
+      checkShiftStatus();
+    } else {
+      alert(res.error || "Shift error");
+    }
+  })
+  .catch(() => {});
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  checkShiftStatus();
+  fetchNotifications();
+  setInterval(fetchNotifications, 15000); // Live poll notifications every 15s
+
+  const notifBtn = document.getElementById("notifBellBtn");
+  const notifPanel = document.getElementById("notifDropdownPanel");
+
+  if (notifBtn && notifPanel) {
+    notifBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      notifPanel.style.display = (notifPanel.style.display === "block") ? "none" : "block";
+      if (notifPanel.style.display === "block") {
+        fetchNotifications();
+      }
+    });
+
+    document.addEventListener("click", function(e) {
+      if (!notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+        notifPanel.style.display = "none";
+      }
+    });
+  }
+
+  const searchInput = document.getElementById("liveSearchInput");
+  const dropdown = document.getElementById("searchResultsDropdown");
+  let searchTimer;
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function() {
+      clearTimeout(searchTimer);
+      const query = this.value.trim();
+
+      if (query.length < 2) {
+        dropdown.style.display = "none";
+        dropdown.innerHTML = "";
+        return;
+      }
+
+      searchTimer = setTimeout(() => {
+        fetch(basePath + "api_search.php?q=" + encodeURIComponent(query))
+          .then(res => res.text())
+          .then(text => {
+            let data = [];
+            try { data = JSON.parse(text); } catch(e) { data = []; }
+
+            if (!data || data.length === 0) {
+              dropdown.innerHTML = '<div style="padding:12px; text-align:center; color:#777; font-size:13px;">No matching results found</div>';
+            } else {
+              let html = '';
+              data.forEach(item => {
+                html += `
+                  <a href="${basePath}${item.url}" class="search-result-item">
+                    <div class="search-result-icon" style="background:${item.color}15; color:${item.color};">
+                      <i class="bi ${item.icon}"></i>
+                    </div>
+                    <div>
+                      <div style="font-weight:600; font-size:13.5px;">${item.title}</div>
+                      <div style="font-size:11.5px; color:#64748b;">${item.subtitle}</div>
+                    </div>
+                  </a>
+                `;
+              });
+              dropdown.innerHTML = html;
+            }
+            dropdown.style.display = "block";
+          })
+          .catch(() => {
+            dropdown.style.display = "none";
+          });
+      }, 250);
+    });
+
+    document.addEventListener("click", function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+  }
+});
+</script>
