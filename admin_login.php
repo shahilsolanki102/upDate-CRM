@@ -15,8 +15,9 @@ if (isset($_SESSION['role'])) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Login — upDate CRM</title>
-<!-- uD Favicon Icon -->
-<link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+<!-- uD Transparent Favicon Icon -->
+<link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+<link rel="alternate icon" type="image/png" href="assets/images/logo.png">
 <link rel="stylesheet" href="assets/css/style.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -48,7 +49,7 @@ if (isset($_SESSION['role'])) {
 <body class="loginWrap">
 
 <form class="loginBox" method="post" action="auth_admin.php">
-  <img src="assets/images/logo.png" class="centerLogo" alt="uD Brand Logo">
+  <img src="assets/images/logo.svg" class="centerLogo" alt="uD Brand Logo">
   <div class="smallCenter">Admin Portal Login</div>
   <div class="subtitle">upDt Education Technology Pvt. Ltd.</div>
 
