@@ -12,59 +12,178 @@ $stmt->bind_param("ii", $uid, $uid);
 $stmt->execute();
 $tasks = $stmt->get_result();
 $stmt->close();
+
+$allTasks = [];
+$totalCnt = 0;
+$pendingCnt = 0;
+$submittedCnt = 0;
+
+if ($tasks) {
+    while ($t = $tasks->fetch_assoc()) {
+        $allTasks[] = $t;
+        $totalCnt++;
+        if (!empty($t['submission_file'])) {
+            $submittedCnt++;
+        } else {
+            $pendingCnt++;
+        }
+    }
+}
+$completionRate = $totalCnt > 0 ? round(($submittedCnt / $totalCnt) * 100) : 0;
 ?>
 
-<div class="card">
-  <h3>My Tasks</h3>
-  <div class="table">
-    <table style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Title</th>
-          <th>Status</th>
-          <th>Due</th>
-          <th>Submission</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-      <?php $i=1; if ($tasks) { while($t = $tasks->fetch_assoc()): ?>
-        <tr>
-          <td><?php echo $i++; ?></td>
-          <td>
-            <div style="font-weight:600"><?php echo htmlspecialchars($t['title']); ?></div>
-            <?php if(!empty($t['description'])): ?>
-              <div style="font-size:.9rem;color:#666"><?php echo nl2br(htmlspecialchars($t['description'])); ?></div>
-            <?php endif; ?>
-          </td>
-          <td><span class="badge"><?php echo htmlspecialchars($t['status'] ?? 'pending'); ?></span></td>
-          <td><?php echo $t['due_date'] ?: '—'; ?></td>
-          <td>
-            <?php if(!empty($t['submission_file'])): ?>
-              <a class="link" href="../uploads/tasks/<?php echo urlencode($t['submission_file']); ?>" target="_blank">📄 View PDF</a>
-              <?php if(!empty($t['submitted_at'])) echo "<div style='font-size:.8rem;color:#666'>".htmlspecialchars($t['submitted_at'])."</div>"; ?>
-            <?php else: ?>
-              —
-            <?php endif; ?>
-          </td>
-          <td>
-            <?php if(empty($t['submission_file'])): ?>
-              <form action="task_submit.php" method="post" enctype="multipart/form-data" style="display:grid; gap:.25rem">
-                <input type="hidden" name="task_id" value="<?php echo $t['id']; ?>">
-                <input type="file" name="submission" accept="application/pdf" required>
-                <input type="text" name="remarks" placeholder="Remarks (optional)">
-                <button class="btn" type="submit">Submit PDF</button>
-              </form>
-            <?php else: ?>
-              <span style="color:#0a0; font-weight:600;">✓ Submitted</span>
-            <?php endif; ?>
-          </td>
-        </tr>
-      <?php endwhile; } ?>
-      </tbody>
-    </table>
-  </div>
+<!-- Task Summary Widgets -->
+<div class="grid">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h3>Total Assigned Tasks</h3>
+            <div class="metric"><?php echo $totalCnt; ?></div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Assigned by Admin</div>
+        </div>
+        <div style="width:50px; height:50px; border-radius:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:24px;">
+            <i class="bi bi-clipboard-data-fill"></i>
+        </div>
+    </div>
+
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h3>Pending Tasks</h3>
+            <div class="metric" style="color:#f59e0b;"><?php echo $pendingCnt; ?></div>
+            <div style="font-size:12px; color:#f59e0b; margin-top:4px; font-weight:600;">⏳ Awaiting PDF Submission</div>
+        </div>
+        <div style="width:50px; height:50px; border-radius:14px; background:#fffbeb; border:1px solid #fde68a; color:#f59e0b; display:flex; align-items:center; justify-content:center; font-size:24px;">
+            <i class="bi bi-hourglass-split"></i>
+        </div>
+    </div>
+
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h3>Submitted Reports</h3>
+            <div class="metric" style="color:#10b981;"><?php echo $submittedCnt; ?></div>
+            <div style="font-size:12px; color:#10b981; margin-top:4px; font-weight:600;">✓ Completed & Uploaded</div>
+        </div>
+        <div style="width:50px; height:50px; border-radius:14px; background:#ecfdf5; border:1px solid #a7f3d0; color:#10b981; display:flex; align-items:center; justify-content:center; font-size:24px;">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+    </div>
+
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h3>Completion Rate</h3>
+            <div class="metric" style="color:#8b5cf6;"><?php echo $completionRate; ?>%</div>
+            <div style="font-size:12px; color:#8b5cf6; margin-top:4px; font-weight:600;">Overall Progress</div>
+        </div>
+        <div style="width:50px; height:50px; border-radius:14px; background:#f3e8ff; border:1px solid #ddd6fe; color:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:24px;">
+            <i class="bi bi-trophy-fill"></i>
+        </div>
+    </div>
 </div>
+
+<!-- Main Task Manager Board -->
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+        <div>
+            <h3 style="font-size:18px; margin:0;">📋 My Workspace Tasks</h3>
+            <div style="font-size:13px; color:var(--text-muted);">Manage your assigned work and submit PDF reports before due dates.</div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+            <button class="btn" onclick="filterTask('all')" style="padding:6px 14px; font-size:13px; background:var(--brand-primary);">All (<?php echo $totalCnt; ?>)</button>
+            <button class="btn" onclick="filterTask('pending')" style="padding:6px 14px; font-size:13px; background:#f59e0b;">Pending (<?php echo $pendingCnt; ?>)</button>
+            <button class="btn" onclick="filterTask('completed')" style="padding:6px 14px; font-size:13px; background:#10b981;">Submitted (<?php echo $submittedCnt; ?>)</button>
+        </div>
+    </div>
+
+    <?php if (!empty($allTasks)): ?>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:18px;">
+            <?php foreach($allTasks as $t): 
+                $isSubmitted = !empty($t['submission_file']);
+                $cardStatus = $isSubmitted ? 'completed' : 'pending';
+            ?>
+                <div class="task-card-item" data-status="<?php echo $cardStatus; ?>" style="background:#ffffff; border:1.5px solid <?php echo $isSubmitted?'#a7f3d0':'#e2e8f0'; ?>; border-radius:18px; padding:20px; box-shadow:0 4px 14px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.2s;">
+                    
+                    <div>
+                        <!-- Header Badges -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <span class="badge" style="background:<?php echo $isSubmitted?'#d1fae5':'#fffbeb'; ?>; color:<?php echo $isSubmitted?'#065f46':'#b45309'; ?>; border:none; padding:4px 10px; font-weight:700;">
+                                <?php echo $isSubmitted ? '✓ Completed & Submitted' : '⏳ Pending Action'; ?>
+                            </span>
+                            <span style="font-size:12px; color:#64748b; font-weight:600;">
+                                <i class="bi bi-calendar-event"></i> <?php echo $t['due_date'] ? date('d M Y', strtotime($t['due_date'])) : 'No due date'; ?>
+                            </span>
+                        </div>
+
+                        <!-- Title & Description -->
+                        <h4 style="margin:0 0 8px 0; font-size:16.5px; color:var(--text-dark); line-height:1.4;">
+                            <?php echo htmlspecialchars($t['title']); ?>
+                        </h4>
+
+                        <?php if (!empty($t['description'])): ?>
+                            <p style="font-size:13.5px; color:var(--text-muted); margin:0 0 16px 0; line-height:1.5; background:#f8fafc; padding:10px 12px; border-radius:10px; border-left:3px solid var(--accent-blue);">
+                                <?php echo nl2br(htmlspecialchars($t['description'])); ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Submission / Action Section -->
+                    <div style="border-top:1px solid #f1f5f9; pt-3; margin-top:14px; padding-top:14px;">
+                        <?php if ($isSubmitted): ?>
+                            <div style="display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; padding:10px 14px; border-radius:12px; border:1px solid #a7f3d0;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <i class="bi bi-file-earmark-pdf-fill" style="color:#ef4444; font-size:22px;"></i>
+                                    <div>
+                                        <div style="font-size:12.5px; font-weight:700; color:#065f46;">Submitted PDF Report</div>
+                                        <div style="font-size:11px; color:#047857;"><?php echo htmlspecialchars($t['submitted_at'] ?? 'Uploaded'); ?></div>
+                                    </div>
+                                </div>
+                                <a href="../uploads/tasks/<?php echo urlencode($t['submission_file']); ?>" target="_blank" class="btn" style="padding:6px 12px; font-size:12px; background:#10b981; border:none;">
+                                    <i class="bi bi-eye"></i> View PDF
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <form action="task_submit.php" method="post" enctype="multipart/form-data" style="display:grid; gap:10px; background:#f8fafc; padding:14px; border-radius:14px; border:1px solid #e2e8f0;">
+                                <input type="hidden" name="task_id" value="<?php echo $t['id']; ?>">
+                                
+                                <div>
+                                    <label style="font-size:12px; font-weight:700; color:var(--text-dark); display:block; margin-bottom:4px;">Attach Work PDF Report</label>
+                                    <input type="file" name="submission" accept="application/pdf" class="input" style="padding:8px 10px; font-size:12.5px;" required>
+                                </div>
+
+                                <div>
+                                    <input type="text" name="remarks" class="input" placeholder="Add remarks or notes (optional)" style="padding:8px 10px; font-size:12.5px;">
+                                </div>
+
+                                <button class="btn" type="submit" style="width:100%; justify-content:center; padding:10px; font-size:13.5px;">
+                                    <i class="bi bi-upload"></i> Submit PDF Report
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div style="text-align:center; padding:40px 20px; color:#64748b;">
+            <i class="bi bi-check2-circle" style="font-size:48px; color:#10b981;"></i>
+            <h4 style="margin:10px 0 4px 0; color:var(--text-dark);">No Tasks Assigned</h4>
+            <p style="font-size:13.5px; margin:0;">You have zero pending tasks assigned by admin.</p>
+        </div>
+    <?php endif; ?>
+</div>
+
+<script>
+function filterTask(type) {
+    const cards = document.querySelectorAll('.task-card-item');
+    cards.forEach(card => {
+        if (type === 'all') {
+            card.style.display = 'flex';
+        } else if (card.dataset.status === type) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
 
 <?php include __DIR__."/../includes/footer.php"; ?>
