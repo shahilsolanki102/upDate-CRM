@@ -26,67 +26,160 @@ if ($isAdmin && strpos($current_path, '/user/') !== false) {
 
 // Calculate relative base path dynamically
 $depth = (strpos($current_path, '/admin/') !== false || strpos($current_path, '/user/') !== false) ? '../' : './';
+
+// Helper function to mark active sidebar links
+function isActive($pageName) {
+    global $current_path;
+    return (strpos($current_path, $pageName) !== false) ? ' active' : '';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>upDate CRM — Dashboard</title>
+<title>upDate CRM — Modern Management Portal</title>
+<!-- Google Fonts & Bootstrap Icons -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <link rel="stylesheet" href="<?php echo $depth; ?>assets/css/style.css">
 </head>
 <body>
 <div class="layout">
 <aside class="sidebar">
   <div class="logoBox">
-    <img src="<?php echo $depth; ?>assets/images/logo.png" class="miniLogo" alt="logo"/>
+    <img src="<?php echo $depth; ?>assets/images/logo.png" class="miniLogo" alt="upDate CRM Logo"/>
     <div class="brand">
       <div class="brand-main">upDate CRM</div>
       <div class="brand-sub">upDt Technology Pvt. Ltd.</div>
     </div>
   </div>
+
   <nav class="sideLinks">
-    <a href="<?php echo ($isAdmin ? $depth.'admin/dashboard.php' : $depth.'user/dashboard.php');?>" class="link">Dashboard</a>
+    <a href="<?php echo ($isAdmin ? $depth.'admin/dashboard.php' : $depth.'user/dashboard.php');?>" class="link<?php echo isActive('dashboard.php'); ?>">
+      <i class="bi bi-grid-1x2-fill icon-side"></i>
+      <span>Dashboard</span>
+    </a>
 
     <?php if($isAdmin): ?>
-      <a href="<?php echo $depth; ?>admin/users.php" class="link">Users / Employees</a>
-      <a href="<?php echo $depth; ?>admin/tasks.php" class="link">Tasks</a>
-      <a href="<?php echo $depth; ?>admin/notes.php" class="link">Notes</a>
-      <a href="<?php echo $depth; ?>admin/announcements.php" class="link">Announcements</a>
-      <a href="<?php echo $depth; ?>admin/calendar.php" class="link">Calendar / Schedule</a>
-      <a href="<?php echo $depth; ?>admin/performance.php" class="link">Performance / Analytics</a>
-      <a href="<?php echo $depth; ?>admin/activity_log.php" class="link">Activity Log</a>
-      <a href="<?php echo $depth; ?>admin/knowledge.php" class="link">Knowledge Base</a>
-      <a href="<?php echo $depth; ?>admin/whatsapp.php" class="link">WhatsApp</a>
-      <a href="<?php echo $depth; ?>admin/gmail.php" class="link">Gmail</a>
-      <a href="<?php echo $depth; ?>admin/settings.php" class="link">Settings</a>
+      <a href="<?php echo $depth; ?>admin/users.php" class="link<?php echo isActive('users.php'); ?>">
+        <i class="bi bi-people-fill icon-side"></i>
+        <span>Users / Employees</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/tasks.php" class="link<?php echo isActive('tasks.php'); ?>">
+        <i class="bi bi-check2-square icon-side"></i>
+        <span>Task Management</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/notes.php" class="link<?php echo isActive('notes.php'); ?>">
+        <i class="bi bi-journal-bookmark-fill icon-side"></i>
+        <span>Notes & Reminders</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/announcements.php" class="link<?php echo isActive('announcements.php'); ?>">
+        <i class="bi bi-megaphone-fill icon-side"></i>
+        <span>Announcements</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/calendar.php" class="link<?php echo isActive('calendar.php'); ?>">
+        <i class="bi bi-calendar3 icon-side"></i>
+        <span>Calendar & Schedule</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/performance.php" class="link<?php echo isActive('performance.php'); ?>">
+        <i class="bi bi-bar-chart-line-fill icon-side"></i>
+        <span>Performance & Analytics</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/activity_log.php" class="link<?php echo isActive('activity_log.php'); ?>">
+        <i class="bi bi-clock-history icon-side"></i>
+        <span>Activity Log</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/knowledge.php" class="link<?php echo isActive('knowledge.php'); ?>">
+        <i class="bi bi-book-half icon-side"></i>
+        <span>Knowledge Base</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/whatsapp.php" class="link<?php echo isActive('whatsapp.php'); ?>">
+        <i class="bi bi-whatsapp icon-side" style="color: #25d366;"></i>
+        <span>WhatsApp Portal</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/gmail.php" class="link<?php echo isActive('gmail.php'); ?>">
+        <i class="bi bi-envelope-at-fill icon-side" style="color: #ea4335;"></i>
+        <span>Email Dispatcher</span>
+      </a>
+      <a href="<?php echo $depth; ?>admin/settings.php" class="link<?php echo isActive('settings.php'); ?>">
+        <i class="bi bi-gear-wide-connected icon-side"></i>
+        <span>System Settings</span>
+      </a>
     <?php else: ?>
-      <a href="<?php echo $depth; ?>user/tasks.php" class="link">Tasks</a>
-      <a href="<?php echo $depth; ?>user/notes.php" class="link">Notes</a>
-      <a href="<?php echo $depth; ?>user/announcements.php" class="link">Announcements</a>
-      <a href="<?php echo $depth; ?>user/calendar.php" class="link">Calendar</a>
-      <a href="<?php echo $depth; ?>user/performance.php" class="link">Performance</a>
-      <a href="<?php echo $depth; ?>user/activity_log.php" class="link">Activity</a>
-      <a href="<?php echo $depth; ?>user/knowledge.php" class="link">Knowledge Base</a>
-      <a href="<?php echo $depth; ?>user/profile.php" class="link">Profile</a>
+      <a href="<?php echo $depth; ?>user/tasks.php" class="link<?php echo isActive('tasks.php'); ?>">
+        <i class="bi bi-check2-square icon-side"></i>
+        <span>My Tasks</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/notes.php" class="link<?php echo isActive('notes.php'); ?>">
+        <i class="bi bi-journal-bookmark-fill icon-side"></i>
+        <span>Personal Notes</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/announcements.php" class="link<?php echo isActive('announcements.php'); ?>">
+        <i class="bi bi-megaphone-fill icon-side"></i>
+        <span>Announcements</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/calendar.php" class="link<?php echo isActive('calendar.php'); ?>">
+        <i class="bi bi-calendar3 icon-side"></i>
+        <span>My Calendar</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/performance.php" class="link<?php echo isActive('performance.php'); ?>">
+        <i class="bi bi-bar-chart-line-fill icon-side"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/activity_log.php" class="link<?php echo isActive('activity_log.php'); ?>">
+        <i class="bi bi-clock-history icon-side"></i>
+        <span>Activity Log</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/knowledge.php" class="link<?php echo isActive('knowledge.php'); ?>">
+        <i class="bi bi-book-half icon-side"></i>
+        <span>Knowledge Base</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/profile.php" class="link<?php echo isActive('profile.php'); ?>">
+        <i class="bi bi-person-circle icon-side"></i>
+        <span>My Profile</span>
+      </a>
+      <a href="<?php echo $depth; ?>user/contact_admin.php" class="link<?php echo isActive('contact_admin.php'); ?>">
+        <i class="bi bi-chat-left-dots-fill icon-side" style="color: #60a5fa;"></i>
+        <span>Contact Admin</span>
+      </a>
     <?php endif; ?>
 
-    <a href="<?php echo $depth; ?>logout.php" class="link danger">Logout</a>
+    <a href="<?php echo $depth; ?>logout.php" class="link danger">
+      <i class="bi bi-box-arrow-right icon-side"></i>
+      <span>Logout</span>
+    </a>
   </nav>
 </aside>
 
 <main class="content">
   <div class="topbar">
     <div class="welcome">
-      Welcome, <?php echo htmlspecialchars($name); ?> 
-      <span class="badge">v1.0</span>
+      <div class="avatar-sm">
+        <?php echo strtoupper(substr($name, 0, 1)); ?>
+      </div>
+      <div>
+        <div style="font-size: 15px; font-weight: 700; color: var(--text-dark);">
+          Welcome back, <?php echo htmlspecialchars($name); ?> 👋
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 400;">
+          Role: <strong style="text-transform: capitalize; color: var(--brand-primary);"><?php echo $role; ?></strong>
+        </div>
+      </div>
+      <span class="badge">v1.0 Pro</span>
     </div>
+
     <div class="actions">
-      <input class="search" placeholder="Search users, notes..."/>
-      <a class="icon" href="#" title="Notifications">🔔</a>
-      <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/whatsapp.php' : $depth.'user/contact_admin.php');?>" title="WhatsApp">🟢</a>
-      <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/gmail.php' : $depth.'user/contact_admin.php');?>" title="Email">✉️</a>
-      <a class="btn" href="<?php echo $depth; ?>logout.php">Logout</a>
+      <div class="search-wrapper">
+        <i class="bi bi-search search-icon"></i>
+        <input class="search" placeholder="Search tasks, notes, users..."/>
+      </div>
+      <a class="icon" href="#" title="Notifications"><i class="bi bi-bell-fill" style="color: #f59e0b;"></i></a>
+      <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/whatsapp.php' : $depth.'user/contact_admin.php');?>" title="WhatsApp Messaging"><i class="bi bi-whatsapp" style="color: #25d366;"></i></a>
+      <a class="icon" href="<?php echo ($isAdmin ? $depth.'admin/gmail.php' : $depth.'user/contact_admin.php');?>" title="Email Dispatcher"><i class="bi bi-envelope-at-fill" style="color: #ea4335;"></i></a>
+      <a class="btn danger-btn" href="<?php echo $depth; ?>logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
     </div>
   </div>
   <div class="page">
