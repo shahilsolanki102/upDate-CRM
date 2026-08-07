@@ -373,7 +373,7 @@ function fetchNotifications() {
       const listContent = document.getElementById("notifListContent");
       if (!badge || !listContent) return;
 
-      if (data.unread > 0) {
+      if (data.unread && data.unread > 0) {
         badge.innerText = data.unread;
         badge.style.display = "inline-block";
       } else {

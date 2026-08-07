@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 ");
 
 if ($action === 'fetch') {
-    $whereClause = ($role === 'admin') ? "(user_id = $uid OR user_id = 1)" : "user_id = $uid";
+    $whereClause = ($role === 'admin') ? "(user_id = $uid OR user_id = 1 OR user_id = 0)" : "(user_id = $uid OR user_id = 0)";
     $res = $conn->query("SELECT * FROM notifications WHERE $whereClause ORDER BY id DESC LIMIT 10");
     $list = [];
     $unreadCnt = 0;
@@ -73,9 +73,9 @@ if ($action === 'fetch') {
 
 if ($action === 'mark_read') {
     if ($role === 'admin') {
-        $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid OR user_id = 1");
+        $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid OR user_id = 1 OR user_id = 0");
     } else {
-        $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid");
+        $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $uid OR user_id = 0");
     }
 
     ob_clean();
